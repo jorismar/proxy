@@ -23,7 +23,7 @@ void udpServer() {
     //server->receive(packet);
     //PRINT("Received: " << packet->get() << std::endl << "Size: " << size);
 
-    server->registerclient("localhost", 1235);
+    //server->registerclient("localhost", 1235);
         
     PRINT("Waiting for packets...");
     
@@ -58,6 +58,12 @@ void udpClient() {
 
 
 int main() {
+    Buffer * udp_buff = new Buffer(BUFFER_SIZE, PACKET_SIZE);
+    Buffer * mpegts_buff = new Buffer(BUFFER_SIZE, 188);
+    
+    
+    
+    
     std::thread svr(udpServer);
     //std::thread clt(udpClient);
     
