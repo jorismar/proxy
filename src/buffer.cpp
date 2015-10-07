@@ -1,45 +1,56 @@
 #include "buffer.h"
 
-Buffer::Buffer(int size, int elem_size) {
-    Buffer::r_pos = 0;
-    Buffer::w_pos = 0;
-    Buffer::buff_size = size;
-    Buffer::elem_size = elem_size;
-    Buffer::buffer = (tElement*) malloc(sizeof(char) * size * elem_size);
+Buffer::Buffer(unsigned int buffer_size, unsigned int data_size) {
+    this->r_pos     = 0;
+    this->w_pos     = 0;
+    this->buff_size = buffer_size;
+    this->data_size = data_size;
+    this->buffer    = (DataPacket**) malloc(sizeof(DataPacket) * buffer_size);
 }
 
 Buffer::~Buffer() {
-    free(Buffer::buffer);
+    // VAZIO
 }
 
-tElement Buffer::next() {
-    return Buffer::buffer[r_pos++ % Buffer::buff_size];
-}
-
-tElement Buffer::get(int index) {
-    return index >= 0 && index < Buffer::buff_size ? Buffer::buffer[index] : NULL;
-}
-
-void Buffer::add(tElement elem) {
-    Buffer::buffer[w_pos++ % Buffer::buff_size] = elem;
-}
-
-int Buffer::set(int index, tElement elem) {
-    if(index >= 0 && index < Buffer::buff_size) {
-        Buffer::buffer[index] = elem;
+int Buffer::set(unsigned int index, DataPacket * data) {
+    if(index < this->buff_size) {
+        this->buffer[index] = new DataPacket(data);
         return 0;
     }
     
     return 1;
 }
 
-tElement Buffer::remove(int index) {
-    tElement elem = NULL;
+DataPacket* Buffer::get(unsigned int index) {
+    DataPacket * data;
     
-    if(index >= 0 && index < Buffer::buff_size) {
-        elem = Buffer::buffer[index];
-        Buffer::buffer[index] = NULL;
-    }
+    if(index < this->buff_size)
+        data = this->buffer[index];
+        
+    return data;
+}
+
+DataPacket* Buffer::next() {
+    unsigned int index = this->r_pos;
     
-    return elem;
+    this->r_pos = ++this->r_pos % this->buff_size;
+
+    return this->get(index);
+}
+
+void Buffer::add(DataPacket *data) {
+    unsigned int index = this->w_pos;
+    
+    this->w_pos = ++this->w_pos % this->buff_size;
+    
+    this->set(index, data);
+}
+
+void Buffer::remove(unsigned int index) {
+    if(index < Buffer::buff_size)
+        this->buffer[index]->~DataPacket();
+}
+
+int Buffer::size() {
+    return this->buff_size;
 }
