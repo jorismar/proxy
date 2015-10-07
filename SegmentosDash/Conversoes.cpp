@@ -2,23 +2,21 @@
 #include <cstdlib>
 #include <limits>
 #include <cctype>
-#include "Conversoes.h"
-#include <vector>  //for std::vector
-#include <array> //for std::array
+#include <stdio.h>
+#include "conversoes.h"
 using namespace std;
 
 Conversoes::Conversoes(char *path){
 	FILE *file = fopen(path,"rb");
 	char byte;
-	Fila *filabits = cria();
+	std::vector <char> vect;
 	this->arquivo = file;
 	if(file==NULL)cout<<"Arquivo nao encontrado!\n";
 	while(!feof(file)){
 		byte=fgetc(file);
-		insere_fila(filabits,byte);
+		vect.push_back(byte);
 	}
-	this->fila = filabits;
-	this->lista = filabits->inicio;
+	this->lista = vect;
 }
 Conversoes::~Conversoes(){}
 
@@ -38,141 +36,65 @@ int Conversoes::bits(char *ar,char j){
     strcat(ar,bits);
     return 0;
 }
-/* O k ƒ o numero de bytes que v‹o ser pulados*/
-Lista* Conversoes::avancarByte(int k){
-	Lista *aux;
-	aux = this->fila->inicio;
+int Conversoes::capturatamanhotipo(){
 	int i = 0;
-	while(i<k){
-		aux = aux->prox;
-		i++;
-		remove(this->fila);
+	char *end;
+	char str[5];
+	while(i<4){
+		this->lista[i] = str[i];
+		i++;	
 	}
-	return aux;
+	str[4] = '\0';
+	return (int)strtol(str,&end,10);
 }
-
 void Conversoes::iniciaAnalize(){
-	Lista *aux;
-    char ar[9];
+	FILE * arquivo;
+	arquivo = fopen("test.mp4","wb");
+	if(arquivo==NULL)cout<<"Erro arquivo de escrita\n";
+	int i = 0;
 	int cont = 0;
-	aux = this->fila->inicio;
-    bits(ar,aux->dado);
-    ar[8]= '\0';
-    
-	switch(verificatipoSeg()){
-		case 1:
-			segmentInitialization();
-			break;
-		case 2:
-			segmentMedia();
-			break;
-		default:
-			cout<<"Porra nenhuma!\n";
-			break;
-	}		
-}
-int Conversoes::verificatipoSeg(){
-	Lista *aux;
-    char ar[9];
-	aux = avancarByte(4);
-	string ftype = "ftyp";
-	string stype = "styp";
-	if(capturaIdentificador() == ftype){
-		cout<<"\nSegmento de Inicializacao\n";
-		return 1;
-	}else{
-		cout<<"\nSegmento de Midia\n";
-		return 2;
-	}
+	char str[5];
+	std::string  identificador;
+		if(capturatamanhotipo() == 0){
+			int version = 0;
+			fwrite(version,sizeof(int),sizeof(version),arquivo);
+			cont = 4;
+			while(i<4){
+				str[i] = this->lista[cont];
+				i++;
+				cont++;
+			}
+			str[4] = '\0';
+			if(!strcmp(str,"styp")){
+				cout<<"Segmento de Media\n";
+				std::string major_brand;
+				while(i<4){
+
+				}
+			}else if(!strcmp(str,"ftyp")){
+				cout<<"Segmento de Inicializacao\n";
+			}else{
+				cout<<"Desconhecido\n";
+			}
+		}else if(capturatamanhotipo() == 1){
+			int version = 1;
+		}else{
+
+			cout<<"Tem algo errado";
+		}
 }
 
 void Conversoes::segmentInitialization(){
-	Lista *aux = this->fila->inicio;
-    int i = 0;
-	string identificador;
-	char byte;
-	/*aux = avancarByte(4);
-    
-	identificador = capturaIdentificador();
-	cout<<"Major brand: "<<identificador<<"\n";
-    this->fftype.major_brand = identificador;
-	aux = avancarByte(4);
-    this->fftype.menor_brand = capturaIdentificador();
-	cout<<"Menor brand: "<<capturaIdentificador()<<"\n";
-	aux = avancarByte(4);
-    this->fftype.compatible_brand[0] = capturaIdentificador();
-	cout<<"Marcas compativeis: "<<capturaIdentificador()<<",";
-    this->fftype.compatible_brand[1] = capturaIdentificador();
-    
-    cout<<"Box Ftyp \n";
-    cout<<this->fftype.menor_brand<<"\n";
-    cout<<this->fftype.major_brand<<"\n";
-    */
-    aux = encontraBox("moov");
-    
-    cout<<aux->dado;
+	
 }
 
 void Conversoes::segmentMedia(){
-    Lista *aux = this->fila->inicio;
-    string identificador;
-    int quatroby = 0;
-    char byte;
-    char ar[9];
-    /*cout<<"Tipo: "<<capturaIdentificador()<<"\n";
-    aux = avancarByte(4);
-    identificador = capturaIdentificador();
-    this->fftype.major_brand = identificador;
-    cout<<"Major brand: "<<identificador<<"\n";
-    aux = avancarByte(4);
-    this->fftype.menor_brand = capturaIdentificador();
-    cout<<"Menor brand: "<<capturaIdentificador()<<"\n";
-    aux = avancarByte(4);
-    this->fftype.compatible_brand[0] = capturaIdentificador();
-    aux = avancarByte(4);
-    this->fftype.compatible_brand[1] = capturaIdentificador();
-    string moof = "moof";*/
-    aux = encontraBox("moov");
-    
-    cout<<aux->dado;
-    
+
 }
 
-string Conversoes::capturaIdentificador(){
-    Lista *lista =  this->fila->inicio;
-	int tamanho = 4,cont = 0;
-	char array[5];
-	while(cont<4){
-		array[cont] = lista->dado;
-		lista = lista->prox;
-		cont++;
-		//remove(this->fila);
-	}
-	array[4]= '\0';
-	string x = array;
-	return x;
-}
-
-Lista* Conversoes::encontraBox(string box){
-    Lista *aux;
-    string identificador;
-    int i = 0;
-    aux = this->fila->inicio;
-    while (aux->prox != NULL) {
-        identificador = capturaIdentificador();
-        if(identificador == box){
-            cout<<"Caixa "<<identificador<<" encontrada\n";
-            break;
-        }
-        aux = avancarByte(4);
-        i++;
-    }
-    cout<<i;
-    return aux;
-}
 
 int main(){
-	char path[] = "videos/i_1442577345.m4s";
+	char path[] = "videos/v_1442508901_125235964.mp4";
     Conversoes con(path);
     con.iniciaAnalize();
 }
