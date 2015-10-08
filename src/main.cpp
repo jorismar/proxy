@@ -1,6 +1,7 @@
 #include "buffer.h"
 #include "datapacket.h"
 #include "datagramsocket.h"
+#include "mpegts.h"
 #include <cstdio>
 #include <thread>
 
@@ -11,17 +12,33 @@
 bool isAlive = false;
 Buffer * buffer = new Buffer(BUFFER_SIZE, PACKET_SIZE);
 
-
 void udpServer() {
-    int count = 0;
-    int size;
-    DataPacket * packet = new DataPacket(PACKET_SIZE);
+    int pos = 0;
+    //int size;
+    //Buffer * ts_buffer = new Buffer(7, 188);
+    DataPacket * ts_packet = new DataPacket(MPEGTS::size());
+    DataPacket * udp_packet = new DataPacket(PACKET_SIZE);
     DatagramSocket * server = new DatagramSocket(UDP_PORT);
     
     server->Bind();
     
-    //server->receive(packet);
-    //PRINT("Received: " << packet->get() << std::endl << "Size: " << size);
+    PRINT("Waiting for connection...");
+    server->receive(udp_packet);
+    PRINT("Connected!\n\n");
+    
+    for(int i = 0; i < 7; i++) {
+        pos = ts_packet->copy(udp_packet, pos);
+        //ts_buffer->add(ts_packet);
+        new MPEGTS(ts_packet);
+    }
+    
+    /*
+    
+    
+    
+    
+    
+
 
     //server->registerclient("localhost", 1235);
         
@@ -39,7 +56,7 @@ void udpServer() {
         PRINT("Packet sended: " << count + 1);
         server->sendtoclient(buffer->get(count)); 
     } while(++count < BUFFER_SIZE);
-}
+*/}
 
 void udpClient() {
     DataPacket * packet = new DataPacket(PACKET_SIZE);
@@ -55,15 +72,12 @@ void udpClient() {
     PRINT("Sended!");
 }
 
+typedef struct {
+    char bt[4];
+} teste;
 
 
 int main() {
-    Buffer * udp_buff = new Buffer(BUFFER_SIZE, PACKET_SIZE);
-    Buffer * mpegts_buff = new Buffer(BUFFER_SIZE, 188);
-    
-    
-    
-    
     std::thread svr(udpServer);
     //std::thread clt(udpClient);
     

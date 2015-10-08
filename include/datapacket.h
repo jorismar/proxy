@@ -4,6 +4,8 @@
 #include <cstdlib>
 #include "types.h"
 
+#define SZE 2908
+
 class DataPacket {
     private:
         unsigned int sz;
@@ -16,6 +18,8 @@ class DataPacket {
         
         t_byte* get();
         void set(t_byte*);
+        
+        unsigned int copy(DataPacket*, int);
         
         unsigned int size();
 };

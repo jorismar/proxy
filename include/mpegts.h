@@ -4,26 +4,50 @@
 #include "types.h"
 #include "datapacket.h"
 
+#define TS_PACKET_SIZE 188
+
+typedef struct {
+    // 1º Byte
+    t_byte sync_byte;
+
+    // 2º e 3º Byte
+    bool   trans_error;
+    bool   pload_start;
+    bool   trans_prior;
+    int    pid;
+
+    // 4º Byte
+    t_byte scramb_control;
+    bool   adapt_control;
+    bool   pload_control;
+    t_byte contin_counter;
+}tHeader;
+
+typedef struct {
+    t_byte length;
+    bool discontinuity;
+    bool random_access;
+    bool es_priority;
+    bool pcr_flag;
+    bool opcr_flag;
+    bool splic_flag;
+    bool private_data;
+    bool extension;
+    t_byte pcr[6];
+    t_byte opcr[6];
+    t_byte splic_count;
+    t_byte * stuff;
+} tAdaptationField;
+
 class MPEGTS {
     private:
-        bool trans_err;
-        bool payload_unit_start;
-        bool is_priority;
-        bool has_adaptat_field;             // Adaptation Field Control
-        bool has_payload_field;             // Adaptation Field Control
-
-        t_byte sync_byte;
-        t_byte trans_scramb_control;
-        t_byte continuity_counter;
-
-        t_byte * pid;
-        t_byte * adaptation;
-        t_byte * payload;
+        tHeader header;
+        tAdaptationField adapt;
         
     public:
         MPEGTS(DataPacket*);
         virtual ~MPEGTS();
-        
+/*        
         bool hasError();
         bool isStartPayload();
         bool isPriority();
@@ -37,5 +61,9 @@ class MPEGTS {
         t_byte* getPID();
         t_byte* getAdaptation();
         t_byte* getPayload();
+*/        
+        static int size() {
+            return TS_PACKET_SIZE;
+        }
 };
 #endif
