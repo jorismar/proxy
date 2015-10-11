@@ -120,13 +120,20 @@ MPEGTS::MPEGTS(DataPacket * mpegts_packet) {
     this->info();
 }
 
-// IMPLEMENTAR ADAPTATION
-// IMPLEMENTAR PES CLASS
-// VERIFICAR TABLES
-
-
 MPEGTS::~MPEGTS() {
     // EMPTY
+}
+
+tHeaderField MPEGTS::getHeader() {
+    return this->header;
+}
+
+tAdaptationField MPEGTS::getAdaptation() {
+    return this->adaptation;
+}
+
+tPayloadField MPEGTS::getPayload() {
+    return this->payload;
 }
 
 void MPEGTS::info() {

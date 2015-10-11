@@ -105,27 +105,17 @@ class MPEGTS {
         tHeaderField header;
         tAdaptationField adaptation;
         tPayloadField payload;
-        
+
     public:
         MPEGTS(DataPacket*);
         virtual ~MPEGTS();
-        
+
+        tHeaderField getHeader();
+        tAdaptationField getAdaptation();
+        tPayloadField getPayload();        
+
         void info();
-/*        
-        bool hasError();
-        bool isStartPayload();
-        bool isPriority();
-        bool hasAdaptation();
-        bool hasPayload();
-        
-        t_byte getSyncByte();
-        t_byte getScrambleMode();
-        t_byte getContinuityCounter();
-        
-        t_byte* getPID();
-        t_byte* getAdaptation();
-        t_byte* getPayload();
-*/        
+
         static int size() {
             return TS_PACKET_SIZE;
         }
