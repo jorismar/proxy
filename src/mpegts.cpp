@@ -5,155 +5,212 @@ MPEGTS::MPEGTS(DataPacket * mpegts_packet) {
     
     this->header.sync_byte      = ts_packet[0];
     this->header.trans_error    = ts_packet[1] >> 7;
-    this->header.pload_start    = ts_packet[1] << 1 >> 7;
+    this->header.payload_start  = ts_packet[1] << 1 >> 7;
     this->header.trans_prior    = ts_packet[1] << 2 >> 7;
     this->header.pid            = ((ts_packet[1] << 3 >> 3) * 256) + ts_packet[2];
     this->header.scramb_control = ts_packet[3] >> 6;
     this->header.adapt_control  = ts_packet[3] << 2 >> 7;
     this->header.pload_control  = ts_packet[3] << 3 >> 7;
     this->header.contin_counter = ts_packet[3] << 4 >> 4;
+    
+    this->adaptation.length     = this->header.adapt_control ? ts_packet[4] : 0;
 
-    PRINT("------ HEADER ------");
+    if(this->header.adapt_control) {
+        this->adaptation.discontinuity    = ts_packet[5] >> 7;
+        this->adaptation.random_access    = ts_packet[5] << 1 >> 7;
+        this->adaptation.es_priority      = ts_packet[5] << 2 >> 7;
+        this->adaptation.pcr_flag         = ts_packet[5] << 3 >> 7;
+        this->adaptation.opcr_flag        = ts_packet[5] << 4 >> 7;
+        this->adaptation.splic_flag       = ts_packet[5] << 5 >> 7;
+        this->adaptation.priv_data_flag   = ts_packet[5] << 6 >> 7;
+        this->adaptation.extension_flag   = ts_packet[5] << 7 >> 7;
+        
+        unsigned int i = 6;
+
+        if(this->adaptation.pcr_flag) {
+            this->adaptation.pcr.base       = ts_packet[i++];
+            this->adaptation.pcr.base       = this->adaptation.pcr.base << 8;
+            this->adaptation.pcr.base      += ts_packet[i++];
+            this->adaptation.pcr.base       = this->adaptation.pcr.base << 8;
+            this->adaptation.pcr.base      += ts_packet[i++];
+            this->adaptation.pcr.base       = this->adaptation.pcr.base << 8;
+            this->adaptation.pcr.base      += ts_packet[i++];
+            this->adaptation.pcr.base       = this->adaptation.pcr.base << 1;
+            this->adaptation.pcr.base      += ts_packet[i] >> 7;
+            
+            this->adaptation.pcr.extension  = ts_packet[i++] << 7 >> 7;
+            this->adaptation.pcr.extension  = this->adaptation.pcr.extension << 8;
+            this->adaptation.pcr.extension += ts_packet[i++];
+        }
+
+        if(this->adaptation.opcr_flag) {
+            this->adaptation.opcr.base       = ts_packet[i++];
+            this->adaptation.opcr.base       = this->adaptation.opcr.base << 8;
+            this->adaptation.opcr.base      += ts_packet[i++];
+            this->adaptation.opcr.base       = this->adaptation.opcr.base << 8;
+            this->adaptation.opcr.base      += ts_packet[i++];
+            this->adaptation.opcr.base       = this->adaptation.opcr.base << 8;
+            this->adaptation.opcr.base      += ts_packet[i++];
+            this->adaptation.opcr.base       = this->adaptation.opcr.base << 1;
+            this->adaptation.opcr.base      += ts_packet[i] >> 7;
+            
+            this->adaptation.opcr.extension  = ts_packet[i++] << 7 >> 7;
+            this->adaptation.opcr.extension  = this->adaptation.opcr.extension << 8;
+            this->adaptation.opcr.extension += ts_packet[i++];
+        }
+
+        if(this->adaptation.splic_flag) {
+            this->adaptation.splice.countdown = ts_packet[i++];
+        }
+
+        if(this->adaptation.priv_data_flag) {
+            this->adaptation.transp_private.length = ts_packet[i++];
+            this->adaptation.transp_private.data = (t_byte*) malloc(sizeof(t_byte) * this->adaptation.transp_private.length);
+            
+            unsigned int j = i + this->adaptation.transp_private.length;
+
+            while(i < j)
+                *this->adaptation.transp_private.data++ = ts_packet[i++];
+        }
+
+        if(this->adaptation.extension_flag) {
+            this->adaptation.extension.length      = ts_packet[i++];
+            this->adaptation.extension.ltw_flag    = ts_packet[i] >> 7;
+            this->adaptation.extension.plecew_flag = ts_packet[i] << 1 >> 7;
+            this->adaptation.extension.splice_flag = ts_packet[i++] << 2 >> 7;
+            
+            if(this->adaptation.extension.ltw_flag) {
+                this->adaptation.extension.ltw.valid_flag = ts_packet[i] >> 7;
+                this->adaptation.extension.ltw.offset     = ts_packet[i++] << 1 >> 1;
+                this->adaptation.extension.ltw.offset     = this->adaptation.extension.ltw.offset << 8;
+                this->adaptation.extension.ltw.offset    += ts_packet[i++];
+            }
+
+            if(this->adaptation.extension.plecew_flag) {
+                this->adaptation.extension.plecewise.rate  = ts_packet[i++];
+                this->adaptation.extension.plecewise.rate  = this->adaptation.extension.plecewise.rate << 8;
+                this->adaptation.extension.plecewise.rate += ts_packet[i++];
+                this->adaptation.extension.plecewise.rate  = this->adaptation.extension.plecewise.rate << 8;
+                this->adaptation.extension.plecewise.rate += ts_packet[i++];
+            }
+
+            if(this->adaptation.extension.splice_flag) {
+                this->adaptation.extension.splice.type           = ts_packet[i] >> 4;
+                this->adaptation.extension.splice.dts_next_au_1  = ts_packet[i] << 4 >> 5;
+                this->adaptation.extension.splice.marker1        = ts_packet[i++] << 7 >> 7;
+                this->adaptation.extension.splice.dts_next_au_2  = ts_packet[i++];
+                this->adaptation.extension.splice.dts_next_au_2  = this->adaptation.extension.splice.dts_next_au_2 << 7;
+                this->adaptation.extension.splice.dts_next_au_2 += ts_packet[i] >> 1;
+                this->adaptation.extension.splice.marker2        = ts_packet[i++] << 7 >> 7;
+                this->adaptation.extension.splice.dts_next_au_3  = ts_packet[i++];
+                this->adaptation.extension.splice.dts_next_au_3  = this->adaptation.extension.splice.dts_next_au_3 << 7;
+                this->adaptation.extension.splice.dts_next_au_3 += ts_packet[i] >> 1;
+            }
+        }
+    }
+    
+    if(this->header.pload_control) {
+        int start_pos = this->header.adapt_control ? this->adaptation.length + 5 : 5;
+        
+        this->payload.length = this->size() - start_pos;
+        this->payload.data = new DataPacket(this->payload.length);
+        this->payload.data->copy(mpegts_packet, start_pos);
+    }
+    
+    this->info();
+}
+
+// IMPLEMENTAR ADAPTATION
+// IMPLEMENTAR PES CLASS
+// VERIFICAR TABLES
+
+
+MPEGTS::~MPEGTS() {
+    // EMPTY
+}
+
+void MPEGTS::info() {
+    PRINT("------------ HEADER ------------");
     PRINT("SYNC BYTE: " << this->header.sync_byte);
     PRINT("TRANSPORT ERROR: " << (this->header.trans_error ? "YES" : "NO"));
-    PRINT("PAYLOAD START: " << (this->header.pload_start ? "YES" : "NO"));
+    PRINT("PAYLOAD START: " << (this->header.payload_start ? "YES" : "NO"));
     PRINT("TRANS. PRIORITY: " << (this->header.trans_prior ? "YES" : "NO"));
     PRINT("PID: " << this->header.pid);
     PRINT("SCRAMBLED: " << (this->header.scramb_control == 0 ? "NOT" : this->header.scramb_control == 1 ? "RESERVED" : this->header.scramb_control == 2 ? "EVEN KEY" : "ODD KEY"));
     PRINT("ADAPTATION FIELD: " << (this->header.adapt_control ? "CONTAIN" : "NOT CONTAIN"));
     PRINT("PAYLOAD FIELD: " << (this->header.pload_control ? "CONTAIN" : "NOT CONTAIN"));
     PRINT("CONTINULTY COUNTER: " << (int) this->header.contin_counter);
-    
-    this->adapt.length          = ts_packet[4];
-    int b = this->adapt.length;
-    
-    PRINT("\n------ ADAPTATION FIELD ------");
-    PRINT("LENGTH: " << b);
 
     if(this->header.adapt_control) {
-        this->adapt.discontinuity = ts_packet[5] >> 7;
-        this->adapt.random_access = ts_packet[5] << 1 >> 7;
-        this->adapt.es_priority   = ts_packet[5] << 2 >> 7;
-        this->adapt.pcr_flag      = ts_packet[5] << 3 >> 7;
-        this->adapt.opcr_flag     = ts_packet[5] << 4 >> 7;
-        this->adapt.splic_flag    = ts_packet[5] << 5 >> 7;
-        this->adapt.private_data  = ts_packet[5] << 6 >> 7;
-        this->adapt.extension     = ts_packet[5] << 7 >> 7;
+        PRINT("\n------- ADAPTATION FIELD -------");
+        PRINT("LENGTH: " << (int) this->adaptation.length);
+        PRINT("DISCONTINUITY: " << (this->adaptation.discontinuity ? "YES" : "NO"));
+        PRINT("RANDOM ACCESS: " << (this->adaptation.random_access ? "YES" : "NO"));
+        PRINT("ES PRIORITY: " << (this->adaptation.es_priority ? "YES" : "NO"));
+        PRINT("PCR FLAG: " << (this->adaptation.pcr_flag ? "YES" : "NO"));
+        PRINT("OPCR FLAG: " << (this->adaptation.opcr_flag ? "YES" : "NO"));
+        PRINT("SPLICING FLAG: " << (this->adaptation.splic_flag ? "YES" : "NO"));
+        PRINT("PRIVATE DATA FLAG: " << (this->adaptation.priv_data_flag ? "YES" : "NO"));
+        PRINT("EXTENSION FLAG: " << (this->adaptation.extension_flag ? "YES" : "NO"));
 
-        PRINT("DISCONTINUITY: " << (this->adapt.discontinuity ? "YES" : "NO"));
-        PRINT("RANDOM ACCESS: " << (this->adapt.random_access ? "YES" : "NO"));
-        PRINT("ES PRIORITY: " << (this->adapt.es_priority ? "YES" : "NO"));
-        PRINT("PCR: " << (this->adapt.pcr_flag ? "YES" : "NO"));
-        PRINT("OPCR: " << (this->adapt.opcr_flag ? "YES" : "NO"));
-        PRINT("SPLICING: " << (this->adapt.splic_flag ? "YES" : "NO"));
-        PRINT("PRIVATE DATA: " << (this->adapt.private_data ? "YES" : "NO"));
-        PRINT("EXTENSION: " << (this->adapt.extension ? "YES" : "NO"));
-        PRINT("\n\n");
-    }    
-
-
-          
-          
-
-
-/*        
-        if(this->adapt.pcr_flag) {
-            this->adapt.pcr[0]    = ts_packet[6];
-            this->adapt.pcr[1]    = ts_packet[7];
-            this->adapt.pcr[2]    = ts_packet[8];
-            this->adapt.pcr[3]    = ts_packet[9];
-            this->adapt.pcr[4]    = ts_packet[10];
-            this->adapt.pcr[5]    = ts_packet[11];
+        if(this->adaptation.pcr_flag) {
+            PRINT("\n----- ADAPTATION-PCR FIELD -----");
+            PRINT("BASE: " << this->adaptation.pcr.base);
+            PRINT("EXTENSION: " << this->adaptation.pcr.extension);
         }
-        
-        if(this->adapt.opcr_flag) {
-            this->adapt.opcr[0]   = ts_packet[];
-            this->adapt.opcr[1]   = ts_packet[];
-            this->adapt.opcr[2]   = ts_packet[];
-            this->adapt.opcr[3]   = ts_packet[];
-            this->adapt.opcr[4]   = ts_packet[];
-            this->adapt.opcr[5]   = ts_packet[];
+
+        if(this->adaptation.opcr_flag) {
+            PRINT("\n---- ADAPTATION-OPCR FIELD -----");
+            PRINT("BASE: " << this->adaptation.opcr.base);
+            PRINT("EXTENSION: " << this->adaptation.opcr.extension);
         }
-        
-        this->adapt.splic_count   = ts_packet[];
-        this->adapt.stuff         = 
+
+        if(this->adaptation.splic_flag) {
+            PRINT("\n----- ADAPTATION-SPL FIELD -----");
+            PRINT("COUNTDOWN: " << (int) this->adaptation.splice.countdown);
+            
+        }
+
+        if(this->adaptation.priv_data_flag) {
+            PRINT("\n----- ADAPTATION-PVT FIELD -----");
+            PRINT("LENGTH: " << (int) this->adaptation.transp_private.length);
+            //PRINT("DATA: " << this->adaptation.transp_private.data);
+        }
+
+        if(this->adaptation.extension_flag) {
+           PRINT("\n----- ADAPTATION-EXT FIELD -----");
+           PRINT("LENGTH: " << (int) this->adaptation.extension.length);
+           PRINT("LTW FLAG: " << (this->adaptation.extension.ltw_flag ? "YES" : "NO"));
+           PRINT("PLECEWISE FLAG: " << (this->adaptation.extension.plecew_flag ? "YES" : "NO"));
+           PRINT("SPLICE FLAG: " << (this->adaptation.extension.splice_flag ? "YES" : "NO"));
+
+            if(this->adaptation.extension.ltw_flag) {
+                PRINT("\n--- ADAPTATION-EXT-LTW FIELD ---");
+                PRINT("VALID FLAG: " << (this->adaptation.extension.ltw.valid_flag ? "YES" : "NO"));
+                PRINT("OFFSET: " << (int) this->adaptation.extension.ltw.offset);
+            }
+
+            if(this->adaptation.extension.plecew_flag) {
+                PRINT("\n--- ADAPTATION-EXT-PLW FIELD ---");
+                PRINT("RATE: " << (int) this->adaptation.extension.plecewise.rate);
+            }
+
+            if(this->adaptation.extension.splice_flag) {
+                PRINT("\n--- ADAPTATION-EXT-SPL FIELD ---");
+                PRINT("TYPE: " << this->adaptation.extension.splice.type);
+                PRINT("DTS NEXT AU: " << this->adaptation.extension.splice.dts_next_au_1);
+                PRINT("MARK: " << this->adaptation.extension.splice.marker1);
+                PRINT("DTS NEXT AU: " << this->adaptation.extension.splice.dts_next_au_2);
+                PRINT("MARK: " << this->adaptation.extension.splice.marker2);
+                PRINT("DTS NEXT AU: " << this->adaptation.extension.splice.dts_next_au_2);
+            }
+        }
     }
     
-    
-    
-    
-    
-    
-    
-    
-    this->sync_byte            
-    
-    this->trans_err             = 
-    this->payload_unit_start    =
-    this->trans_priority;       =
-    
-    this->pid                   = (t_byte*) malloc(sizeof(t_byte) * 2);
-    
-    *this->pid                  =
+    if(this->header.pload_control) {
+        PRINT("\n----------- PAYLOAD ------------");
+        PRINT("LENGTH: " << (int) this->payload.length);
+    }
 
-    this-> trans_scramb_control = 
-
-    this->adaptat_field_control =
-    this->payload_field_control =
-
-    this-> continuity_counter   =
-    
-    this->adaptat_length        = adaptat_field_control ? ts_packet[4] : 0;
-
-    this->adaptation            = ;
-    this->payload;  */
+    PRINT("--------------------------------\n\n");
 }
-
-MPEGTS::~MPEGTS() {
-    
-}
-/*
-bool MPEGTS::hasError() {
-    return this->trans_err;
-}
-
-bool MPEGTS::isStartPayload() {
-    return this->payload_unit_start;
-}
-
-bool MPEGTS::isPriority() {
-    return this->trans_priority;
-}
-
-bool MPEGTS::hasAdaptation() {
-    return this->adaptat_field_control;
-}
-
-bool MPEGTS::hasPayload() {
-    return this->payload_field_control;
-}
-
-t_byte MPEGTS::getSyncByte() {
-    return this->sync_byte;
-}
-
-t_byte MPEGTS::getScrambleMode() {
-    return this->trans_scramb_control;
-}
-
-t_byte MPEGTS::getContinuityCounter() {
-    return this->continuity_counter;
-}
-
-t_byte* MPEGTS::getPID() {
-    return this->pid;
-}
-
-t_byte* MPEGTS::getAdaptation() {
-    return this->adaptation;
-}
-
-t_byte* MPEGTS::getPayload() {
-    return this->payload;
-}
-*/

@@ -12,41 +12,105 @@ typedef struct {
 
     // 2º e 3º Byte
     bool   trans_error;
-    bool   pload_start;
+    bool   payload_start;
     bool   trans_prior;
-    int    pid;
+    short  pid;
 
     // 4º Byte
     t_byte scramb_control;
     bool   adapt_control;
     bool   pload_control;
     t_byte contin_counter;
-}tHeader;
+} tHeaderField;
 
 typedef struct {
-    t_byte length;
+    unsigned long base;
+    // 6b Reserved
+    unsigned short extension;
+} tPCRField;
+
+typedef struct {
+    unsigned long base;
+    // 6b Reserved
+    unsigned short extension;
+} tOPCRField;
+
+typedef struct {
+    t_byte countdown;
+} tSpliceCountdownField;
+
+typedef struct {
+    unsigned char length;
+    t_byte * data;
+} tPrivDataField;
+
+typedef struct {
+    bool valid_flag;
+    short offset;
+} tLTWField;
+
+typedef struct {
+    // 2b reserved
+    unsigned int rate;     // 22b
+} tPlecewiseField;
+
+typedef struct {
+    t_byte type;
+    t_byte dts_next_au_1;   // 3b
+    bool marker1;           // 1b
+    short dts_next_au_2;   // 15b
+    bool marker2;           // 1b
+    short dts_next_au_3;   // 15b
+} tSpliceField;
+
+typedef struct {
+    unsigned char length;
+    bool ltw_flag;
+    bool plecew_flag;
+    bool splice_flag;
+    // 5 bits reserved
+    tLTWField ltw;
+    tPlecewiseField plecewise;
+    tSpliceField splice;
+} tExtensionField;
+
+typedef struct {
+    unsigned char length;
     bool discontinuity;
     bool random_access;
     bool es_priority;
+    
     bool pcr_flag;
     bool opcr_flag;
     bool splic_flag;
-    bool private_data;
-    bool extension;
-    t_byte pcr[6];
-    t_byte opcr[6];
-    t_byte splic_count;
-    t_byte * stuff;
+    bool priv_data_flag;
+    bool extension_flag;
+    
+    tPCRField pcr;
+    tOPCRField opcr;
+    tSpliceCountdownField splice;
+    tPrivDataField transp_private;
+    tExtensionField extension;
+    
+    // Stuffing Bytes
 } tAdaptationField;
+
+typedef struct {
+    unsigned int length;
+    DataPacket * data;
+} tPayloadField;
 
 class MPEGTS {
     private:
-        tHeader header;
-        tAdaptationField adapt;
+        tHeaderField header;
+        tAdaptationField adaptation;
+        tPayloadField payload;
         
     public:
         MPEGTS(DataPacket*);
         virtual ~MPEGTS();
+        
+        void info();
 /*        
         bool hasError();
         bool isStartPayload();

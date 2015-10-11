@@ -1,8 +1,8 @@
 #include "datapacket.h"
 
-DataPacket::DataPacket(unsigned int size) {
-    this->sz   = size;
-    this->data = (t_byte*) malloc(sizeof(t_byte) * size);
+DataPacket::DataPacket(unsigned int nbytes) {
+    this->sz   = nbytes;
+    this->data = (t_byte*) malloc(sizeof(t_byte) * nbytes);
 }
 
 DataPacket::DataPacket(DataPacket * datapacket) {
@@ -25,10 +25,10 @@ void DataPacket::set(t_byte * data) {
         this->data[i] = data[i];
 }
 
-unsigned int DataPacket::copy(DataPacket * packet, int start_pos) {
+unsigned int DataPacket::copy(DataPacket * source, int start_pos) {
     int i, j;
-    int p_len = packet->size();
-    t_byte * data_buff = packet->get(); 
+    int p_len = source->size();
+    t_byte * data_buff = source->get(); 
     
     for(i = 0, j = start_pos; i < this->sz && j < p_len; i++, j++) {
         this->data[i] = data_buff[j];

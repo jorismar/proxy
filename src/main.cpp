@@ -14,8 +14,6 @@ Buffer * buffer = new Buffer(BUFFER_SIZE, PACKET_SIZE);
 
 void udpServer() {
     int pos = 0;
-    //int size;
-    //Buffer * ts_buffer = new Buffer(7, 188);
     DataPacket * ts_packet = new DataPacket(MPEGTS::size());
     DataPacket * udp_packet = new DataPacket(PACKET_SIZE);
     DatagramSocket * server = new DatagramSocket(UDP_PORT);
@@ -31,7 +29,7 @@ void udpServer() {
         //ts_buffer->add(ts_packet);
         new MPEGTS(ts_packet);
     }
-    
+}
     /*
     
     
@@ -56,8 +54,8 @@ void udpServer() {
         PRINT("Packet sended: " << count + 1);
         server->sendtoclient(buffer->get(count)); 
     } while(++count < BUFFER_SIZE);
-*/}
-
+}
+/*
 void udpClient() {
     DataPacket * packet = new DataPacket(PACKET_SIZE);
     DatagramSocket * client = new DatagramSocket(UDP_PORT);
@@ -76,13 +74,14 @@ typedef struct {
     char bt[4];
 } teste;
 
-
+*/
 int main() {
     std::thread svr(udpServer);
     //std::thread clt(udpClient);
     
     svr.join();
     //clt.join();
+
      return 0;
 }
 
