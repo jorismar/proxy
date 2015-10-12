@@ -16,27 +16,27 @@ MPEGTS::MPEGTS(DataPacket * mpegts_packet) {
     this->adaptation.length     = this->header.adapt_control ? ts_packet[4] : 0;
 
     if(this->header.adapt_control) {
-        this->adaptation.discontinuity    = ts_packet[5] >> 7;
-        this->adaptation.random_access    = ts_packet[5] << 1 >> 7;
-        this->adaptation.es_priority      = ts_packet[5] << 2 >> 7;
-        this->adaptation.pcr_flag         = ts_packet[5] << 3 >> 7;
-        this->adaptation.opcr_flag        = ts_packet[5] << 4 >> 7;
-        this->adaptation.splic_flag       = ts_packet[5] << 5 >> 7;
-        this->adaptation.priv_data_flag   = ts_packet[5] << 6 >> 7;
-        this->adaptation.extension_flag   = ts_packet[5] << 7 >> 7;
+        this->adaptation.discontinuity  = ts_packet[5] >> 7;
+        this->adaptation.random_access  = ts_packet[5] << 1 >> 7;
+        this->adaptation.es_priority    = ts_packet[5] << 2 >> 7;
+        this->adaptation.pcr_flag       = ts_packet[5] << 3 >> 7;
+        this->adaptation.opcr_flag      = ts_packet[5] << 4 >> 7;
+        this->adaptation.splic_flag     = ts_packet[5] << 5 >> 7;
+        this->adaptation.priv_data_flag = ts_packet[5] << 6 >> 7;
+        this->adaptation.extension_flag = ts_packet[5] << 7 >> 7;
         
         unsigned int i = 6;
 
         if(this->adaptation.pcr_flag) {
-            this->adaptation.pcr.base       = ts_packet[i++];
-            this->adaptation.pcr.base       = this->adaptation.pcr.base << 8;
-            this->adaptation.pcr.base      += ts_packet[i++];
-            this->adaptation.pcr.base       = this->adaptation.pcr.base << 8;
-            this->adaptation.pcr.base      += ts_packet[i++];
-            this->adaptation.pcr.base       = this->adaptation.pcr.base << 8;
-            this->adaptation.pcr.base      += ts_packet[i++];
-            this->adaptation.pcr.base       = this->adaptation.pcr.base << 1;
-            this->adaptation.pcr.base      += ts_packet[i] >> 7;
+            this->adaptation.pcr.base  = ts_packet[i++];
+            this->adaptation.pcr.base  = this->adaptation.pcr.base << 8;
+            this->adaptation.pcr.base += ts_packet[i++];
+            this->adaptation.pcr.base  = this->adaptation.pcr.base << 8;
+            this->adaptation.pcr.base += ts_packet[i++];
+            this->adaptation.pcr.base  = this->adaptation.pcr.base << 8;
+            this->adaptation.pcr.base += ts_packet[i++];
+            this->adaptation.pcr.base  = this->adaptation.pcr.base << 1;
+            this->adaptation.pcr.base += ts_packet[i] >> 7;
             
             this->adaptation.pcr.extension  = ts_packet[i++] << 7 >> 7;
             this->adaptation.pcr.extension  = this->adaptation.pcr.extension << 8;
@@ -44,15 +44,15 @@ MPEGTS::MPEGTS(DataPacket * mpegts_packet) {
         }
 
         if(this->adaptation.opcr_flag) {
-            this->adaptation.opcr.base       = ts_packet[i++];
-            this->adaptation.opcr.base       = this->adaptation.opcr.base << 8;
-            this->adaptation.opcr.base      += ts_packet[i++];
-            this->adaptation.opcr.base       = this->adaptation.opcr.base << 8;
-            this->adaptation.opcr.base      += ts_packet[i++];
-            this->adaptation.opcr.base       = this->adaptation.opcr.base << 8;
-            this->adaptation.opcr.base      += ts_packet[i++];
-            this->adaptation.opcr.base       = this->adaptation.opcr.base << 1;
-            this->adaptation.opcr.base      += ts_packet[i] >> 7;
+            this->adaptation.opcr.base  = ts_packet[i++];
+            this->adaptation.opcr.base  = this->adaptation.opcr.base << 8;
+            this->adaptation.opcr.base += ts_packet[i++];
+            this->adaptation.opcr.base  = this->adaptation.opcr.base << 8;
+            this->adaptation.opcr.base += ts_packet[i++];
+            this->adaptation.opcr.base  = this->adaptation.opcr.base << 8;
+            this->adaptation.opcr.base += ts_packet[i++];
+            this->adaptation.opcr.base  = this->adaptation.opcr.base << 1;
+            this->adaptation.opcr.base += ts_packet[i] >> 7;
             
             this->adaptation.opcr.extension  = ts_packet[i++] << 7 >> 7;
             this->adaptation.opcr.extension  = this->adaptation.opcr.extension << 8;
@@ -65,7 +65,7 @@ MPEGTS::MPEGTS(DataPacket * mpegts_packet) {
 
         if(this->adaptation.priv_data_flag) {
             this->adaptation.transp_private.length = ts_packet[i++];
-            this->adaptation.transp_private.data = (t_byte*) malloc(sizeof(t_byte) * this->adaptation.transp_private.length);
+            this->adaptation.transp_private.data   = (t_byte*) malloc(sizeof(t_byte) * this->adaptation.transp_private.length);
             
             unsigned int j = i + this->adaptation.transp_private.length;
 
