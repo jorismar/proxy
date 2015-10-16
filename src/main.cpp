@@ -2,6 +2,7 @@
 #include "datapacket.h"
 #include "datagramsocket.h"
 #include "mpegts.h"
+#include "dash.h"
 #include <cstdio>
 #include <thread>
 
@@ -55,7 +56,7 @@ void udpServer() {
         server->sendtoclient(buffer->get(count)); 
     } while(++count < BUFFER_SIZE);
 }
-/*
+
 void udpClient() {
     DataPacket * packet = new DataPacket(PACKET_SIZE);
     DatagramSocket * client = new DatagramSocket(UDP_PORT);
@@ -75,12 +76,15 @@ typedef struct {
 } teste;
 
 */
+
 int main() {
-    std::thread svr(udpServer);
+    //std::thread svr(udpServer);
     //std::thread clt(udpClient);
     
-    svr.join();
+    //svr.join();
     //clt.join();
+    GF_ISOFile * arquivo;
+    Dash dash(arquivo);
 
      return 0;
 }
