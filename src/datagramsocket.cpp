@@ -91,3 +91,7 @@ void DatagramSocket::registerclient(std::string address, int port) {
     inet_pton(AF_INET, address.c_str(), &this->to_addr.sin_addr);
     this->to_addr.sin_port = htons(port);
 }
+
+int DatagramSocket::getSocket() {
+    return this->svr_socket;
+}
