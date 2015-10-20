@@ -4,7 +4,7 @@
 //#include <cstdio>
 //#include <thread>    
 
-#include "mpegts.h"
+#include <gpac/mpegts.h>
 
 //#define PACKET_SIZE 1316
 //#define BUFFER_SIZE 1000
