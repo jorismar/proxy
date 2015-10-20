@@ -3,7 +3,7 @@
 //  MPEG-TS-to-MPEG-DASH
 //
 //  Created by Josue on 16/10/15.
-#include "dash.h"
+/*#include "dash.h"
 #include "types.h"
 
 Dash::Dash(GF_ISOFile *f){
@@ -184,4 +184,11 @@ void Dash::mostradados(){
     PRINT("Duracao do track "<<gf_isom_get_media_duration(aux,3));
     PRINT("Numero de tracks "<<gf_isom_get_track_count(aux));
     PRINT("TimeScale da trak 1 "<<gf_isom_get_media_timescale(aux,1));
+<<<<<<< HEAD
 }
+=======
+}
+
+*/
+
+>>>>>>> 9f3929dcdc7aaab57d55166cbfea1e279605b56f

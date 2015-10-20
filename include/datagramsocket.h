@@ -37,6 +37,7 @@ class DatagramSocket {
         int getPort();
         std::string getHostAddress();
         void registerclient(std::string, int);
+        int getSocket();
 };
 
 #endif
