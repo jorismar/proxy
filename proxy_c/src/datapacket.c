@@ -1,26 +1,23 @@
 #include "datapacket.h"
 
-tDataPacket newPacket(int size) {
-    tDataPacket packet;
+DataPacket new_packet(int length) {
+    DataPacket packet;
     
-    packet.size = size;
-    packet.data = (byte*) malloc(sizeof(byte) * size);
-    
-    packet.getData = &get_data;
-    packet.copyByRange = &copy_by_range;
-    packet.length = &length;
+    packet.length = length;
+    packet.data = (byte*) malloc(sizeof(byte) * length);
     
     return packet;
 }
 
-byte * get_data() {
-    return 
+DataPacket new_copy_by_range(const DataPacket * from, unsigned int from_start_pos, unsigned int length) {
+    int i, j;
+    DataPacket to;
+    
+    to = new_packet(length);
+    
+    for(i = 0, j = from_start_pos; i < to.length && j < from->length; i++, j++)
+        to.data[i] = from->data[j];
+        
+    return to;
 }
 
-unsigned int copy_by_range(tDataPacket*, unsigned int, unsigned int) {
-    
-}
-
-unsigned int length() {
-    
-}

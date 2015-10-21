@@ -1,16 +1,14 @@
-#include <stdlib.h>
+#ifndef DATAPACKET_H
+#define DATAPACKET_H
+
 #include "types.h"
 
 typedef struct tDataPacket{
-    unsigned int size;
+    unsigned int length;
     byte * data;
-    
-    byte * (*getData)();
-    unsigned int (*copyByRange)(tDataPacket*, unsigned int, unsigned int);
-    unsigned int (*length)();
-} tDataPacket;
+} DataPacket;
 
-tDataPacket * newPacket(int);
-byte * get_data();
-unsigned int copy_by_range(tDataPacket*, unsigned int, unsigned int);
-unsigned int length();
+DataPacket new_packet(int);
+DataPacket new_copy_by_range(const DataPacket*, unsigned int, unsigned int);
+
+#endif
