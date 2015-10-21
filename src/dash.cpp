@@ -3,15 +3,15 @@
 //  MPEG-TS-to-MPEG-DASH
 //
 //  Created by Josue on 16/10/15.
-/*#include "dash.h"
+#include "dash.h"
 #include "types.h"
 
 Dash::Dash(GF_ISOFile *f){
 	this->file = f;
 	int i = 0;
-	//this->file = gf_isom_open("/Users/Josue/Documents/MPEG-TS-to-MPEG-DASH/midia/ex.mp4",GF_ISOM_OPEN_READ,NULL);
-	//mostradados();
-	//fragmenta();
+	this->file = gf_isom_open("/Users/Josue/Documents/MPEG-TS-to-MPEG-DASH/midia/ex.mp4",GF_ISOM_OPEN_READ,NULL);
+	mostradados();
+	fragmenta();
 }
 
 Dash::~Dash(){}
@@ -139,8 +139,6 @@ void Dash::recebeudp(){
 			u32 hdr_length = 0;
 			u8 cmd_type = buffer[0];
 			bytes_received = 0;
-			//d
-
 		}
 
 	}
@@ -184,11 +182,4 @@ void Dash::mostradados(){
     PRINT("Duracao do track "<<gf_isom_get_media_duration(aux,3));
     PRINT("Numero de tracks "<<gf_isom_get_track_count(aux));
     PRINT("TimeScale da trak 1 "<<gf_isom_get_media_timescale(aux,1));
-<<<<<<< HEAD
 }
-=======
-}
-
-*/
-
->>>>>>> 9f3929dcdc7aaab57d55166cbfea1e279605b56f

@@ -25,6 +25,7 @@ int main () {
     return 0;
 }
 */
+
 typedef struct
 {
     FILE *ts_file;
@@ -108,16 +109,7 @@ void tsDemux() {
             std::cout << "ERRO(play): " << gf_error_to_string(err) << std::endl;
     }
 }
-<<<<<<< HEAD
-    /*
     
-    
-
-    
-
-=======
->>>>>>> 9f3929dcdc7aaab57d55166cbfea1e279605b56f
-
 void udpServer() {
     DataPacket * udp_packet = new DataPacket(PACKET_SIZE);
     DatagramSocket * server = new DatagramSocket(UDP_PORT);
@@ -135,8 +127,10 @@ void udpServer() {
 }
 
 int main() {
-    std::thread svr(udpServer);
-    svr.join();
+    //std::thread svr(udpServer);
+    //svr.join();
+    GF_ISOFile *file;
+    Dash dash(file);
 
     return 0;
 }
