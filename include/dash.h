@@ -16,7 +16,9 @@
 #include <gpac/internal/ietf_dev.h>
 #include <gpac/setup.h>
 #include "types.h"
-
+#include <gpac/internal/media_dev.h>
+#include <gpac/config_file.h>
+#include <gpac/network.h>
 static GF_Err MP4_API_IO_Err;
 
 class Dash

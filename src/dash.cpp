@@ -4,6 +4,10 @@
 //
 //  Created by Josue on 16/10/15.
 #include "dash.h"
+
+extern "C"{
+	#include "dash_segmenter.h"	
+}
 #include "types.h"
 
 Dash::Dash(GF_ISOFile *f){
@@ -58,7 +62,7 @@ void Dash::fragmenta(){
 		e = gf_dasher_set_info(dasher,"title",cprt,"s","c:/");
 		if(e){
 			PRINT("Erro!");
-		}
+		}	
 
 		for (i=0; i < nb_mpd_base_urls; i++) {
 			e = gf_dasher_add_base_url(dasher, mpd_base_urls[i]);
@@ -68,11 +72,11 @@ void Dash::fragmenta(){
 		}
 		e = gf_dasher_enable_url_template(dasher, (Bool) use_url_template, seg_name, seg_ext);
 		if(!e) e = gf_dasher_enable_segment_timeline(dasher,segment_timeline);
-		/*
+	
 		if (!e) e = gf_dasher_enable_single_segment(dasher, single_segment);
 		if (!e) e = gf_dasher_enable_single_file(dasher, single_file);
 		if (!e) e = gf_dasher_set_switch_mode(dasher, bitstream_switching_mode);
-		if (!e) e = gf_dasher_set_durations(dasher, dash_duration, dash_duration_strict, interleaving_time);
+		/*if (!e) e = gf_dasher_set_durations(dasher, dash_duration, dash_duration_strict, interleaving_time);
 		if (!e) e = gf_dasher_enable_rap_splitting(dasher, seg_at_rap, frag_at_rap);
 		if (!e) e = gf_dasher_set_segment_marker(dasher, segment_marker);
 		if (!e) e = gf_dasher_enable_sidx(dasher, (subsegs_per_sidx>=0) ? 1 : 0, (u32) subsegs_per_sidx, daisy_chain_sidx);
@@ -84,8 +88,11 @@ void Dash::fragmenta(){
 		if (!e) e = gf_dasher_configure_isobmf_default(dasher, no_fragments_defaults, pssh_in_moof, samplegroups_in_traf, single_traf_per_moof);
 		if (!e) e = gf_dasher_enable_utc_ref(dasher, insert_utc);
 		if (!e) e = gf_dasher_enable_real_time(dasher, frag_real_time);
-		if (!e) e = gf_dasher_set_profile_extension(dasher, dash_profile_extension);*/
-		//dash_inputs = 
+		if (!e) e = gf_dasher_set_profile_extension(dasher, dash_profile_extension);
+		//dash_inputs = */
+		//e = gf_dasher_process(dasher,dash_duration);
+
+		//dasher_isom_segment_file(this->file,"fragmento",dasher,NULL,GF_OK);
 }
 
 void Dash::recebeudp(){
