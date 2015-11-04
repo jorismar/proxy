@@ -1,6 +1,8 @@
 #ifndef HTTP_H
 #define HTTP_H
 
+#include <cstring>
+
 /* Informational Responses */
 #define RPLY_CONTINUE           100
 #define RPLY_SWITCHING          101
@@ -80,10 +82,30 @@ class Http {
         std::string date;
         std::string cache_control;
         std::string content_type;
-        std::string server;
-        
+        std::string server_name;
+
     public:
+        Http(std::string);
+        virtual ~Http();
         
+        int get_range_size();
+        int get_range_initial_pos();
+        int get_range_final_pos();
+        int get_connection_state();
+        double get_version();
+        std::string get_reqsted_file();
+        std::string get_referer();
+        std::string get_user_agent();
+        std::string get_encoding();
+        std::string get_language();
+        std::string get_charset();
+        std::string get_date();
+        std::string get_cache_control();
+        std::string get_content_type();
+        std::string get_server_name();
+        
+        void read_msg(t_byte*);
+        t_byte* write_msg(int, int);
 };
 
 #endif
