@@ -61,10 +61,53 @@
 #define RPLY_VARNT_ALSO_NEGOT   507
 #define RPLY_NETWRK_AUTHENT_REQ 511
 
+/* Connection */
+#define CLOSE       0
+#define KEEP_ALIVE  1
+
 class Http {
     private:
+        int start_range;
+        int end_range;
+        int connection;
+        double http_version;
+        std::string reqst_file;
+        std::string referer;
+        std::string user_agent;
+        std::string accpt_encoding;
+        std::string accpt_lang;
+        std::string accpt_charset;
+        std::string date;
+        std::string cache_control;
+        std::string content_type;
+        std::string server;
         
+    public:
         
 };
 
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
