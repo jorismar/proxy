@@ -7,11 +7,11 @@
 #define PACKET_SIZE 1316
 #define BUFFER_SIZE 1000
 #define UDP_PORT 1234
+using namespace toolsdash;
     
 int main() {
 	
-    GF_ISOFile *file;
-    Dash dash(file);  
+    Dash dash("/Users/Josue/Documents/ex.mp4");  
 
     return 0;
 }
