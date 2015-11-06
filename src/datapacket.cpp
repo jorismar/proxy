@@ -25,6 +25,7 @@ void DataPacket::set(t_byte * data) {
         this->data[i] = data[i];
 }
 
+// NAO PERMITIR ESPAÇO VAZIO DENTRO DO PACKET, MUDAR PARA COPIA POR RANGE
 unsigned int DataPacket::copy(DataPacket * source, int start_pos) {
     int i, j;
     int p_len = source->size();

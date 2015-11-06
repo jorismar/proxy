@@ -4,7 +4,7 @@
 #include "datapacket.h"
 #include "buffer.h"
 #include "socket.h"
-#include "http.h"
+#include "types.h"
 
 class Webserver {
     private:

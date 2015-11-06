@@ -10,3 +10,5 @@
 #define PRINT(msg) std::cout << msg << std::endl;
 
 typedef char t_byte;
+typedef unsigned long long t_size;
+
