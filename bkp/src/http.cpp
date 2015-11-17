@@ -83,7 +83,7 @@ std::string Http::get_server_name() {
 
 
 void Http::read_msg(t_byte* msg) {
-    PRINT(msg);
+    // IMPLEMENTAR
 }
 
 t_byte* Http::write_msg(int reply_status, int connection_state) {

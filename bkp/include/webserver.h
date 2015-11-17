@@ -9,12 +9,8 @@
 class Webserver {
     private:
         Buffer * buffer;
-    public:
-        Webserver();
-        virtual ~Webserver();
+        // CRIAR CLASSE FILE
         
-        void start();
-        void stop();
 };
 
 #endif

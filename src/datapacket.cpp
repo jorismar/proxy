@@ -1,43 +1,58 @@
 #include "datapacket.h"
 
-DataPacket::DataPacket(unsigned int nbytes) {
-    this->sz   = nbytes;
-    this->data = (t_byte*) malloc(sizeof(t_byte) * nbytes);
+DataPacket::DataPacket(t_size n_bytes) {
+    this->length = n_bytes;
+    this->data   = (t_byte*) malloc(sizeof(t_byte) * n_bytes);
 }
 
 DataPacket::DataPacket(DataPacket * datapacket) {
-    this->sz   = datapacket->size();
-    this->data = (t_byte*) malloc(sizeof(t_byte) * this->sz);
+    this->length = datapacket->size();
+    this->data   = (t_byte*) malloc(sizeof(t_byte) * this->length);
 
-    this->copy(datapacket, 0);
+    this->set(datapacket->get());
 }
 
 DataPacket::~DataPacket() {
-    // VAZIO
+    // NOT IMPLEMENTED
 }
 
-t_byte* DataPacket::get() {
+t_byte* DataPacket::get() { 
     return this->data;
 }
 
 void DataPacket::set(t_byte * data) {
-    for(int i = 0; i < this->sz; i++)
+    for(int i = 0; i < this->length; i++)
         this->data[i] = data[i];
 }
 
-// NAO PERMITIR ESPAÇO VAZIO DENTRO DO PACKET, MUDAR PARA COPIA POR RANGE
+void DataPacket::setbyte(t_byte byte, t_pos pos) {
+    this->data[pos] = byte;
+}
+
+/*
 unsigned int DataPacket::copy(DataPacket * source, int start_pos) {
     int i, j;
     int p_len = source->size();
     t_byte * data_buff = source->get(); 
     
-    for(i = 0, j = start_pos; i < this->sz && j < p_len; i++, j++) {
+    for(i = 0, j = start_pos; i < this->length && j < p_len; i++, j++)
         this->data[i] = data_buff[j];
-    }
+    
     
     return j;
 }
+*/
+t_size DataPacket::size() {
+    return this->length;
+}
 
-unsigned int DataPacket::size() {
-    return this->sz;
+DataPacket* DataPacket::fragment(t_pos initpos, t_size len) {
+    if(this->length < initpos + len) return NULL;
+    
+    DataPacket * packet = new DataPacket(len);
+    
+    for(t_pos fm = initpos, to = 0; to < len; fm++, to++)
+        packet->setbyte(this->data[fm], to);
+    
+    return packet;
 }

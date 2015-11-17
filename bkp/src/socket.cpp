@@ -1,4 +1,4 @@
-/*#include "socket.h"
+#include "socket.h"
 
 Socket::Socket(int port) {
     this->svr_socket = socket(AF_INET,SOCK_STREAM,0);
@@ -55,4 +55,3 @@ void Socket::Close() {
     close(this->svr_socket);
     close(this->cl_socket);
 }
-*/

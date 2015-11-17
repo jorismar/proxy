@@ -9,15 +9,16 @@ Buffer::Buffer(unsigned int buffer_size, unsigned int data_size) {
 }
 
 Buffer::~Buffer() {
-    // NOT IMPLEMENTED
+    // VAZIO
 }
 
 int Buffer::set(unsigned int index, DataPacket * data) {
-    if(!(index < this->buff_size)) return 1;
+    if(index < this->buff_size) {
+        this->buffer[index] = new DataPacket(data);
+        return 0;
+    }
     
-    this->buffer[index] = new DataPacket(data);
-
-    return 0;
+    return 1;
 }
 
 DataPacket* Buffer::get(unsigned int index) {

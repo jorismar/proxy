@@ -15,11 +15,10 @@ class DataPacket {
         
         t_byte* get();
         void set(t_byte*);
-        void setbyte(t_byte, t_pos);
+        
+        t_size copy(DataPacket*, int);
         
         t_size size();
-        
-        DataPacket* fragment(t_pos, t_size);
 };
 
 #endif

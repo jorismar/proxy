@@ -8,10 +8,10 @@
 class VirtualFile {
     private:
         std::string name;
-        DataPacket * bin;
+        DataPacket * binary;
         // Substituir por DataPacket
         t_byte * bin;
-        t_size length;
+        t_size size;
         
     public:
         VirtualFile(std::string);

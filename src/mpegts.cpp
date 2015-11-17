@@ -33,6 +33,8 @@ MPEGTS::MPEGTS(DataPacket * mpegts_packet) {
             this->adaptation.pcr.base += ts_packet[i++];
             this->adaptation.pcr.base  = this->adaptation.pcr.base << 8;
             this->adaptation.pcr.base += ts_packet[i++];
+            
+            
             this->adaptation.pcr.base  = this->adaptation.pcr.base << 8;
             this->adaptation.pcr.base += ts_packet[i++];
             this->adaptation.pcr.base  = this->adaptation.pcr.base << 1;
@@ -111,11 +113,12 @@ MPEGTS::MPEGTS(DataPacket * mpegts_packet) {
     
     if(this->header.pload_control) {
         int start_pos = this->header.adapt_control ? this->adaptation.length + 5 : 5;
-        
-        this->payload.length = this->size() - start_pos;
-        this->payload.data = new DataPacket(this->payload.length);
+        this->payload.data = mpegts_packet->fragment(start_pos, this->size() - start_pos);
+/*        
+        new DataPacket(this->payload.length);
         this->payload.data->copy(mpegts_packet, start_pos);
-    }
+        this->payload.length = this->size() - start_pos;
+*/  }
     
     this->info();
 }

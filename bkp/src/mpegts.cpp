@@ -1,4 +1,4 @@
-#include "mpeg2ts.h"
+#include "mpegts.h"
 
 MPEGTS::MPEGTS(DataPacket * mpegts_packet) {
     t_byte * ts_packet = mpegts_packet->get();
@@ -33,8 +33,6 @@ MPEGTS::MPEGTS(DataPacket * mpegts_packet) {
             this->adaptation.pcr.base += ts_packet[i++];
             this->adaptation.pcr.base  = this->adaptation.pcr.base << 8;
             this->adaptation.pcr.base += ts_packet[i++];
-            
-            
             this->adaptation.pcr.base  = this->adaptation.pcr.base << 8;
             this->adaptation.pcr.base += ts_packet[i++];
             this->adaptation.pcr.base  = this->adaptation.pcr.base << 1;
