@@ -2,6 +2,7 @@
 #include "datapacket.h"
 #include "datagramsocket.h"
 #include "mpegts.h"
+#include "webserver.h"
 #include <cstdio>
 #include <thread>    
 
@@ -34,8 +35,11 @@ void udpServer() {
 }
 
 int main() {
-    std::thread svr(udpServer);
-    svr.join();
+//    std::thread svr(udpServer);
+//    svr.join();
+
+    Webserver * svr = new Webserver("TESTE", 8080, udp_buffer);
+    svr->start();
 
     return 0;
 }

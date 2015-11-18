@@ -16,6 +16,7 @@ class DataPacket {
         t_byte* get();
         void set(t_byte*);
         void setbyte(t_byte, t_pos);
+        void printPkt();
         
         t_size size();
         

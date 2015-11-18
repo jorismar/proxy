@@ -1,5 +1,5 @@
-#ifndef DATAGRAM_SOCKET
-#define DATAGRAM_SOCKET
+#ifndef DATAGRAM_SOCKET_H
+#define DATAGRAM_SOCKET_H
 
 #include <cstring>
 #include <unistd.h>

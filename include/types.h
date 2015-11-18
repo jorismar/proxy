@@ -10,6 +10,7 @@
 #define PRINT(msg) std::cout << msg << std::endl;
 
 typedef char t_byte;
+typedef int t_socket;
 typedef unsigned long long t_size;
 typedef unsigned long long t_pos;
 

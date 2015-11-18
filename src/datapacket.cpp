@@ -56,3 +56,7 @@ DataPacket* DataPacket::fragment(t_pos initpos, t_size len) {
     
     return packet;
 }
+
+void DataPacket::printPkt() {
+    PRINT("OK!!!");
+}

@@ -1,6 +1,6 @@
 #include "http.h"
 
-Http::Http(std::string server_name) {
+Http::Http() {
     this->start_range = 0;
     this->end_range = 0;
     this->connection = CLOSE;
@@ -17,8 +17,25 @@ Http::Http(std::string server_name) {
     this->server_name = "";
 }
 
+Http::Http(std::string server_name) {
+    this->start_range = 0;
+    this->end_range = 0;
+    this->connection = CLOSE;
+    this->http_version = 0.0;
+    this->reqst_file = "";
+    this->referer = "";
+    this->user_agent = "";
+    this->accpt_encoding = "";
+    this->accpt_lang = "";
+    this->accpt_charset = "";
+    this->date = "";
+    this->cache_control = "";
+    this->content_type = "";
+    this->server_name = server_name;
+}
+
 Http::~Http() {
-    
+    // NOT IMPLEMENTED
 }
 
 int Http::get_range_size() {
@@ -81,9 +98,12 @@ std::string Http::get_server_name() {
     return this->server_name;
 }
 
+void Http::setServerName(std::string name) {
+    this->server_name = name;
+}
 
-void Http::read_msg(t_byte* msg) {
-    PRINT(msg);
+void Http::read_msg(DataPacket * msg) {
+    PRINT(msg->get());
 }
 
 t_byte* Http::write_msg(int reply_status, int connection_state) {

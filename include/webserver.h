@@ -1,20 +1,32 @@
 #ifndef WEBSERVER_H
 #define WEBSERVER_H
 
+#include <string>
+#include <thread>
+
 #include "datapacket.h"
 #include "buffer.h"
 #include "socket.h"
 #include "types.h"
+#include "virtualfile.h"
+#include "http.h"
 
 class Webserver {
     private:
+        Http * protocol;
+        Socket * socket;
         Buffer * buffer;
+        t_socket client;
+        bool alive;
+        
     public:
-        Webserver();
+        Webserver(std::string, int, Buffer*);
         virtual ~Webserver();
         
         void start();
         void stop();
+        
+        void startClient();
 };
 
 #endif

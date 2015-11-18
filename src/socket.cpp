@@ -1,30 +1,31 @@
-/*#include "socket.h"
+#include "socket.h"
 
 Socket::Socket(int port) {
     this->svr_socket = socket(AF_INET,SOCK_STREAM,0);
     
-    EXIT_IF(svr_socket < 0, "ERROR: Failed to open http socket.");
+    EXIT_IF(svr_socket < 0, "ERROR: Failed to open socket.");
     
     this->port = port;
 }
 
 Socket::~Socket() {
-    
+    // NOT IMPLEMENTED
 }
 
 int Socket::Bind() {
     int r;
     
     memset((char*) &this->svr_addr, 0, sizeof(this->svr_addr));
+    
     this->svr_addr.sin_family = AF_INET;
     this->svr_addr.sin_addr.s_addr = INADDR_ANY;
-    this->svr_addr.sin_sin_port = htons(this->port);
+    this->svr_addr.sin_port = htons(this->port);
     
     r = bind(this->svr_socket, (struct sockaddr*) &this->svr_addr, sizeof(this->svr_addr));
         
     EXIT_IF(r < 0, "ERROR on binding");
     
-    return ret;
+    return r;
 }
 
 int Socket::Listen(int backlog) {
@@ -37,10 +38,12 @@ int Socket::Listen(int backlog) {
     return r;
 }
 
-void Socket::Accept() {
+t_socket Socket::Accept() {
     this->cl_socket = accept(this->svr_socket, (struct sockaddr*) &this->cl_socket, &this->cl_socket_len);
     
     EXIT_IF(this->cl_socket < 0, "ERROR on accept");
+    
+    return cl_socket;
 }
 
 int Socket::Read(DataPacket * data) {
@@ -55,4 +58,3 @@ void Socket::Close() {
     close(this->svr_socket);
     close(this->cl_socket);
 }
-*/

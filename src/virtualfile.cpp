@@ -1,95 +1,61 @@
-/*
 #include "virtualfile.h"
 
-VirtualFile(std::string filename) {
+VirtualFile::VirtualFile(std::string filename) {
     this->name = filename;
-    this->bin = NULL;
-    this->length = 0;
+    this->bin  = NULL;
 }
 
-VirtualFile(std::string filename, t_size size) {
+VirtualFile::VirtualFile(std::string filename, t_size size) {
     this->name = filename;
+    this->bin  = new DataPacket(size);
+}
+
+VirtualFile::VirtualFile(std::string filename, DataPacket * packet) {
+    this->name = filename;
+    this->bin  = packet;
+}
+
+VirtualFile::VirtualFile(std::string filename, t_byte* bin, t_size size) {
+    this->name = filename;
+    this->bin  = NULL;
+    this->setBinary(bin, size);
+}
+
+VirtualFile::~VirtualFile() {
+    // NOT IMPLEMENTED
+}
+
+void VirtualFile::setFilename(std::string filename) {
+    this->name = filename;
+}
+
+void VirtualFile::setBinary(t_byte * bin, t_size size) {
+    if(bin != NULL)
+        this->bin->~DataPacket();
+        
     this->bin = new DataPacket(size);
-    this->length = size;
+    this->bin->set(bin);
 }
 
-VirtualFile(std::string filename, DataPacket * packet) {
-    this->name = filename;
-    this->bin = packet;
-    this->length = packet->size();
-}
-
-VirtualFile(std::string filename, t_byte* bin, t_size size) {
-    this->name = filename;
-    this->bin = new DataPacket(size);
-    this->length = size;
+void VirtualFile::setBinary(DataPacket * packet) {
+    if(bin != NULL)
+        this->bin->~DataPacket();
     
-    this->bin->set(bin);
-}
-
-virtual ~VirtualFile() {
-    // VAZIO
-}
-
-void setFilename(std::string filename) {
-    this->name = filename;
-}
-
-void setSize(t_size size) {
-    this->length = size;
-}
-
-void setBinary(t_byte * bin) {
-    this->bin->set(bin);
-}
-
-void setBinPacket(DataPacket * packet) {
     this->bin = packet;
 }
 
-std::string getFilename() {
+std::string VirtualFile::getFilename() {
     return this->name;
 }
 
-t_size getSize() {
-    return this->length;
-}
-
-t_byte * getBinary() {
+t_byte * VirtualFile::getBinary() {
     return this->bin->get();
 }
 
-DataPacket * getBinPacket() {
+DataPacket * VirtualFile::getBinPacket() {
     return this->bin;
 }
 
-/*
-void copyBinary(t_byte * bin, t_size size) {
-    if(this->length == 0) {
-        this->length = size;
-        this->bin = (t_byte*) malloc(sizeof(t_byte) * size);
-    }
-    
-    EXIT_IF(this->length != size, "[VirtualFile] ERROR: Incompatible sizes");
-    
-    t_byte byte;
-    
-    do {
-        byte = *bin++;
-        *this->bin++ = byte;
-    } while(byte != EOF);
+t_size VirtualFile::size() {
+    return this->bin->size();
 }
-
-/*
-void copyBinary(t_byte * bin, t_size size) {
-    if(this->length == 0) {
-        this->length = size;
-        this->bin = (t_byte*) malloc(sizeof(t_byte) * size);
-    }
-    
-    EXIT_IF(this->length != size, "[VirtualFile] ERROR: Incompatible sizes");
-    
-    for(int i = 0; i < this->length; i++)
-        this->bin[i] = bin[i];
-}
-*/

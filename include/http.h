@@ -67,6 +67,7 @@
 
 #include <string>
 #include "types.h"
+#include "datapacket.h"
 
 class Http {
     private:
@@ -86,6 +87,7 @@ class Http {
         std::string server_name;
 
     public:
+        Http();
         Http(std::string);
         virtual ~Http();
         
@@ -94,6 +96,7 @@ class Http {
         int get_range_final_pos();
         int get_connection_state();
         double get_version();
+        
         std::string get_reqsted_file();
         std::string get_referer();
         std::string get_user_agent();
@@ -105,7 +108,9 @@ class Http {
         std::string get_content_type();
         std::string get_server_name();
         
-        void read_msg(t_byte*);
+        void setServerName(std::string);
+        
+        void read_msg(DataPacket*);
         t_byte* write_msg(int, int);
 };
 
