@@ -103,7 +103,65 @@ void Http::setServerName(std::string name) {
 }
 
 void Http::read_msg(DataPacket * msg) {
-    PRINT(msg->get());
+    PRINT(msg->get() << std::endl << std::endl);
+    
+    char * words = strtok(msg->get(), " "), * aux;
+    int i;
+    
+    while(words != NULL) {
+        if(!strcmp(words, "GET")) {
+            words = strtok (NULL, " ");
+            this->reqst_file = words;
+        } else if(strstr(words, "HTTP/") != NULL) {
+            //aux = strtok(words, "/");
+            this->http_version = std::atof(words);
+        } else if(!strcmp(words, "")) {
+            
+        } else if(!strcmp(words, "")) {
+            
+        } else if(!strcmp(words, "")) {
+            
+        } else if(!strcmp(words, "")) {
+            
+        } else if(!strcmp(words, "")) {
+            
+        } else if(!strcmp(words, "")) {
+            
+        } else if(!strcmp(words, "")) {
+            
+        } else if(!strcmp(words, "")) {
+            
+        } else if(!strcmp(words, "")) {
+            
+        } else if(!strcmp(words, "")) {
+            
+        }
+        
+        //if(!strcmp(words, "Host")) {
+            PRINT(this->http_version);
+            words = strtok (NULL, " ");
+        //}
+        
+        
+        
+        
+        //words = strtok (NULL, ":");
+    }
+/*    
+    this->start_range = 0;
+    this->end_range = 0;
+    this->connection = CLOSE;
+    this->http_version = 0.0;
+    this->reqst_file = "";
+    this->referer = "";
+    this->user_agent = "";
+    this->accpt_encoding = "";
+    this->accpt_lang = "";
+    this->accpt_charset = "";
+    this->date = "";
+    this->cache_control = "";
+    this->content_type = "";
+    this->server_name = "";*/
 }
 
 t_byte* Http::write_msg(int reply_status, int connection_state) {

@@ -66,6 +66,8 @@
 #define KEEP_ALIVE  1
 
 #include <string>
+#include <cstring>
+#include <cstdlib>
 #include "types.h"
 #include "datapacket.h"
 

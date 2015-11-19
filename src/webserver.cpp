@@ -22,6 +22,8 @@ void Webserver::start() {
         std::thread cl(&Webserver::startClient, this);
         cl.join();
     }
+    
+    this->socket->Close();
 }
 
 void Webserver::stop() {
@@ -34,4 +36,7 @@ void Webserver::startClient() {
     
     Socket::readFrom(skt, msg);
     this->protocol->read_msg(msg);
+    
+    Socket::Close(skt);
+    this->alive = false;
 }
