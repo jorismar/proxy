@@ -23,6 +23,7 @@ class Buffer {
         void add(DataPacket*);      
         void remove(unsigned int);
         
+        //int occupiedLength();
         int size();
 };
 

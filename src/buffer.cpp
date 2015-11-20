@@ -15,6 +15,8 @@ Buffer::~Buffer() {
 int Buffer::set(unsigned int index, DataPacket * data) {
     if(!(index < this->buff_size)) return 1;
     
+    // Permitir apenas editar posicoes ja ocupadas
+    
     this->buffer[index] = new DataPacket(data);
 
     return 0;
@@ -32,9 +34,11 @@ DataPacket* Buffer::get(unsigned int index) {
 DataPacket* Buffer::next() {
     unsigned int index = this->r_pos;
     
-    this->r_pos = ++this->r_pos % this->buff_size;
+    // Não permitir leitura de posicao ainda não ocupada
+    if(this->buffer[index] != NULL)
+        this->r_pos = ++this->r_pos % this->buff_size;
 
-    return this->get(index);
+    return this->buffer[index];
 }
 
 void Buffer::add(DataPacket *data) {

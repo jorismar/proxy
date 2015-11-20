@@ -102,66 +102,43 @@ void Http::setServerName(std::string name) {
     this->server_name = name;
 }
 
-void Http::read_msg(DataPacket * msg) {
-    PRINT(msg->get() << std::endl << std::endl);
+void Http::read_msg(DataPacket * msg) { // int Http::process(DataPacket * msg, Buffer * files_buffer)
+    PRINT(std::endl << msg->get() << std::endl << std::endl);
     
     char * words = strtok(msg->get(), " "), * aux;
     int i;
     
     while(words != NULL) {
+        //PRINT(words);
         if(!strcmp(words, "GET")) {
             words = strtok (NULL, " ");
             this->reqst_file = words;
         } else if(strstr(words, "HTTP/") != NULL) {
+            // NOT IMPLEMENTED YET
             //aux = strtok(words, "/");
-            this->http_version = std::atof(words);
-        } else if(!strcmp(words, "")) {
-            
-        } else if(!strcmp(words, "")) {
-            
-        } else if(!strcmp(words, "")) {
-            
-        } else if(!strcmp(words, "")) {
-            
-        } else if(!strcmp(words, "")) {
-            
-        } else if(!strcmp(words, "")) {
-            
-        } else if(!strcmp(words, "")) {
-            
-        } else if(!strcmp(words, "")) {
-            
-        } else if(!strcmp(words, "")) {
-            
-        } else if(!strcmp(words, "")) {
-            
+            //this->http_version = std::atof(words);
+        } else if(!strcmp(words, "Host:")) {
+            // NOT IMPLEMENTED YET
+        } else if(!strcmp(words, "Connection:")) {
+            // NOT IMPLEMENTED YET
+        } else if(!strcmp(words, "Cache-Control:")) {
+            // NOT IMPLEMENTED YET
+        } else if(!strcmp(words, "Accept-Encoding:")) {
+            // NOT IMPLEMENTED YET
+        } else if(!strcmp(words, "User-Agent:")) {
+            // NOT IMPLEMENTED YET
+        } else if(!strcmp(words, "Accept:")) {
+            // NOT IMPLEMENTED YET
+        } else if(!strcmp(words, "Referer:")) {
+            // NOT IMPLEMENTED YET
+        } else if(!strcmp(words, "Accept-Language:")) {
+            // NOT IMPLEMENTED YET
+        } else if(!strcmp(words, "Range:")) {
+            // NOT IMPLEMENTED YET
         }
         
-        //if(!strcmp(words, "Host")) {
-            PRINT(this->http_version);
-            words = strtok (NULL, " ");
-        //}
-        
-        
-        
-        
-        //words = strtok (NULL, ":");
+        words = strtok (NULL, " ");
     }
-/*    
-    this->start_range = 0;
-    this->end_range = 0;
-    this->connection = CLOSE;
-    this->http_version = 0.0;
-    this->reqst_file = "";
-    this->referer = "";
-    this->user_agent = "";
-    this->accpt_encoding = "";
-    this->accpt_lang = "";
-    this->accpt_charset = "";
-    this->date = "";
-    this->cache_control = "";
-    this->content_type = "";
-    this->server_name = "";*/
 }
 
 t_byte* Http::write_msg(int reply_status, int connection_state) {

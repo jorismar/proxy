@@ -12,6 +12,13 @@ DataPacket::DataPacket(DataPacket * datapacket) {
     this->set(datapacket->get());
 }
 
+DataPacket::DataPacket(t_byte * data, t_size size) {
+    this->length = size;
+    this->data   = (t_byte*) malloc(sizeof(t_byte) * this->length);
+
+    this->set(data);
+}
+
 DataPacket::~DataPacket() {
     // NOT IMPLEMENTED
 }

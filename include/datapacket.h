@@ -11,6 +11,7 @@ class DataPacket {
     public:
         DataPacket(t_size);
         DataPacket(DataPacket*);
+        DataPacket(t_byte*, t_size);
         virtual ~DataPacket();
         
         t_byte* get();

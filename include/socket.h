@@ -36,6 +36,10 @@ class Socket {
             return send(dest, data->get(), data->size(), 0);
         }
         
+        static int sendTo(t_socket dest, t_byte * data, t_size size) {
+            return send(dest, data, size, 0);
+        }
+        
         static void Close(t_socket socket) {
             close(socket);
         }
