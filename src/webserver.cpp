@@ -64,7 +64,6 @@ void Webserver::startClient() {
         }   
     
         finalcnt = Socket::sendTo(skt, aux->get(), cnt);
-        //sleep(1);
         //printf("Data written 1 = %d bytes: %s\n",finalcnt,strerror(errno));
 
         if(finalcnt <= 0){   
