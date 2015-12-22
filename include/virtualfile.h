@@ -9,24 +9,24 @@
 class VirtualFile {
     private:
         std::string name;
-        DataPacket * bin;
+        std::string type;
+        std::string modifd;
+        t_byte * bin;
+        t_size len;
         
     public:
-        VirtualFile(std::string);
-        VirtualFile(std::string, t_size);
-        VirtualFile(std::string, DataPacket*);
-        VirtualFile(std::string, t_byte*, t_size);
+        VirtualFile(std::string, std::string, std::string);
+        VirtualFile(std::string, std::string, std::string, t_byte*, t_size);
         virtual ~VirtualFile();
         
         void setFilename(std::string);
         void setBinary(t_byte*, t_size);
-        void setBinary(DataPacket*);
 
-        std::string getFilename();
-        t_byte * getBinary();
-        DataPacket * getBinPacket();
-
-        t_size size();
+        std::string filename();
+        std::string filetype();
+        std::string filemodified_date();
+        t_byte* binary();
+        t_size  size();
 };
 
 #endif

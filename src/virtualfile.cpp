@@ -1,28 +1,23 @@
 #include "virtualfile.h"
 
-VirtualFile::VirtualFile(std::string filename) {
+VirtualFile::VirtualFile(std::string filename, std::string type, std::string modified_date) {
     this->name = filename;
+    this->type = type;
+    this->modifd = modified_date;
     this->bin  = NULL;
+    this->len  = 0;
 }
 
-VirtualFile::VirtualFile(std::string filename, t_size size) {
+VirtualFile::VirtualFile(std::string filename, std::string type, std::string modified_date, t_byte* bin, t_size size) {
     this->name = filename;
-    this->bin  = new DataPacket(size);
-}
-
-VirtualFile::VirtualFile(std::string filename, DataPacket * packet) {
-    this->name = filename;
-    this->bin  = packet;
-}
-
-VirtualFile::VirtualFile(std::string filename, t_byte* bin, t_size size) {
-    this->name = filename;
-    this->bin  = NULL;
+    this->type = type;
+    this->modifd = modified_date;
+    this->bin  = (t_byte*) malloc(sizeof(t_byte) * size);
     this->setBinary(bin, size);
 }
 
 VirtualFile::~VirtualFile() {
-    // NOT IMPLEMENTED
+    free(this->bin);
 }
 
 void VirtualFile::setFilename(std::string filename) {
@@ -31,31 +26,30 @@ void VirtualFile::setFilename(std::string filename) {
 
 void VirtualFile::setBinary(t_byte * bin, t_size size) {
     if(bin != NULL)
-        this->bin->~DataPacket();
-        
-    this->bin = new DataPacket(size);
-    this->bin->set(bin);
-}
-
-void VirtualFile::setBinary(DataPacket * packet) {
-    if(bin != NULL)
-        this->bin->~DataPacket();
+        free(this->bin);
     
-    this->bin = packet;
+    this->len = size;
+    this->bin = (t_byte*) malloc(sizeof(t_byte) * size);
+        
+    for(int i = 0; i < size; i++)
+        this->bin[i] = bin[i];    
 }
 
-std::string VirtualFile::getFilename() {
+std::string VirtualFile::filename() {
     return this->name;
 }
 
-t_byte * VirtualFile::getBinary() {
-    return this->bin->get();
+std::string VirtualFile::filetype() {
+    return this->type;
+}
+std::string VirtualFile::filemodified_date() {
+    return this->modifd;
 }
 
-DataPacket * VirtualFile::getBinPacket() {
+t_byte * VirtualFile::binary() {
     return this->bin;
 }
 
 t_size VirtualFile::size() {
-    return this->bin->size();
+    return this->len;
 }

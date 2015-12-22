@@ -14,7 +14,7 @@ DataPacket::DataPacket(DataPacket * datapacket) {
 
 DataPacket::DataPacket(t_byte * data, t_size size) {
     this->length = size;
-    this->data   = (t_byte*) malloc(sizeof(t_byte) * this->length);
+    this->data   = (t_byte*) malloc(sizeof(t_byte) * size);
 
     this->set(data);
 }

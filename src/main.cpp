@@ -3,43 +3,49 @@
 #include "datagramsocket.h"
 #include "mpegts.h"
 #include "webserver.h"
+#include "http.h"
 #include <cstdio>
-#include <thread>    
+#include <thread>
 
 #define PACKET_SIZE 1316
 #define BUFFER_SIZE 1000
 #define UDP_PORT 1234
 
-bool isAlive = false;
-Buffer * udp_buffer = new Buffer(BUFFER_SIZE, PACKET_SIZE);
-Buffer * ts_buffer = new Buffer(BUFFER_SIZE * 7, 188);
+Buffer * filebuffer = new Buffer(100);
 
-void udpServer() {
-    DataPacket * udp_packet = new DataPacket(PACKET_SIZE);
-    DatagramSocket * server = new DatagramSocket(UDP_PORT);
-    MPEGTS * ts_packet;
-    int i = 0;
-    
-    server->Bind();
+void webserver() {
+    Webserver * svr = new Webserver(8080, &filebuffer);
+    svr->start();
+}
 
-    PRINT("Waiting for connection...");
+void file_generator() {
+	int count;
+	char * bin;
+	FILE * pfile;
+	
+	pfile = fopen("/home/jorismar/proxy/bkp/site/video.mp4", "rb");
+	
+    EXIT_IF(pfile == NULL, "Erro ao abrir arquivo.");
     
-    while(true) {
-        server->receive(udp_packet);
-	while(i < PACKET_SIZE) {
-	    ts_packet = new MPEGTS(udp_packet->fragment(i, MPEGTS::size()));
-	    i += MPEGTS::size();
-	}
-	i = 0;
-    }
+    fseek (pfile , 0, SEEK_END);
+    long fsize = ftell (pfile);
+    rewind (pfile);
+	
+    bin = (char*) malloc (sizeof(char) * fsize);
+
+	count = fread (bin, 1, fsize, pfile);
+
+	filebuffer->add(new VirtualFile("video.mp4", TYPE_MP4, Http::getDate(), bin, fsize));
+	
+	fclose(pfile);
 }
 
 int main() {
-//    std::thread svr(udpServer);
-//    svr.join();
-
-    Webserver * svr = new Webserver("TESTE", 8080, udp_buffer);
-    svr->start();
+    std::thread svr(webserver);
+	std::thread filegen(file_generator);
+	
+	filegen.detach();
+    svr.join();
 
     return 0;
 }

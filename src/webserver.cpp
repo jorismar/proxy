@@ -1,9 +1,9 @@
 #include "webserver.h"
 
-Webserver::Webserver(std::string svr_name, int svr_port, Buffer * buffr) {
-    this->protocol = new Http(svr_name);
+Webserver::Webserver(int svr_port, Buffer **filebuffer) {
+    this->header = new Http();
     this->socket = new Socket(svr_port);
-    this->buffer = buffr;
+    this->fbuffer = filebuffer;
 }
 
 Webserver::~Webserver() {
@@ -15,106 +15,55 @@ void Webserver::start() {
 
     this->socket->Bind();
     this->socket->Listen(10);
-    
+    PRINT("Server started!")
     while(alive) {
-        PRINT("Waiting for connection...");
+        //PRINT("Waiting for connection...");
         this->client = this->socket->Accept();
         std::thread cl(&Webserver::startClient, this);
-        cl.join();
+        cl.detach();
     }
     
     this->socket->Close();
 }
 
 void Webserver::stop() {
-    
+    this->alive = false;
 }
 
 void Webserver::startClient() {
+    std::string hder;
     t_socket skt = this->client;
-    DataPacket * msg = new DataPacket(1500);
-    std::string str = "HTTP/1.0 200 OK\nDate: Thu, 19 Nov 2015 19:55:58 GMT\nConnection: close\nCache-control: private Content-type: video/ogg\nServer: MyServer";
-    Buffer * fbuffer = new Buffer(1000, 1025);
-    t_byte fbin[1025];
-    DataPacket * aux = new DataPacket(1025);
-    t_socket file = open("/home/jorismar/node_modules/test-engine-live-tools/site/video.ogg",O_RDONLY);
-    int cnt, xcnt = 0, finalcnt;
+    VirtualFile * file;
+    char * buff;
+    DataPacket * packet = new DataPacket(1024);
     
-    Socket::readFrom(skt, msg);
-    //this->protocol->read_msg(msg);
+    Socket::readFrom(skt, packet);
+    this->header->process(packet);
+    
+    PRINT("\nHeader received:\n" << packet->get());
 
-    msg->set((t_byte*) str.c_str());
+    file = (*fbuffer)->get(0); //->next();
     
-    Socket::sendTo(skt, msg);
+    hder = this->header->generate(file->size(), file->filetype(), file->filemodified_date());
     
-    PRINT("Sending video stream...");
+    PRINT("Header sended:\n" << hder);
+    
+    buff = (t_byte*) malloc(sizeof(t_byte) * (hder.length() + file->size()));
+    
+    memcpy(buff, hder.c_str(), hder.length());
+    memcpy(buff + hder.length(), file->binary(), file->size());
+    
+    Socket::sendTo(skt, buff, hder.length() + file->size());
+    PRINT("Sending file completed!" << file->filename());
 
-    while(true){
-        std::this_thread::sleep_for (std::chrono::milliseconds(400));
-        cnt = Socket::readFrom(file, aux);
+    //std::this_thread::sleep_for (std::chrono::milliseconds(1000));
 
-        if(xcnt==7)   
-            break;   
-        else if(xcnt > 0 && cnt != 0)   
-            xcnt = 0;   
-        else if(xcnt >=0 && cnt == 0){   
-            sleep(1);   
-            xcnt++;   
-            continue;   
-        }   
-    
-        finalcnt = Socket::sendTo(skt, aux->get(), cnt);
-        //printf("Data written 1 = %d bytes: %s\n",finalcnt,strerror(errno));
-
-        if(finalcnt <= 0){   
-            memcpy(fbin, aux->get(), cnt);  
-            finalcnt = cnt;
-            PRINT("REDEFINIDA!");
-            break;   
-        }   
-    }   
-    
-    if(xcnt == 7) return;
-/*    
-    //    
-    
-    
-    if(fbuffer->next() == NULL) PRINT("OK_OK");
-    
-    file = fopen("/home/jorismar/node_modules/test-engine-live-tools/site/video.ogg", "rb");
-
-    t_size fsize = ftell(file);
-    rewind(file);
-    
-    fbin = (t_byte*) malloc(sizeof(t_byte) * fsize);
-    
-    EXIT_IF(file == NULL, "ERRO while open file");
-    
-    //PRINT("Loading video file...");
-    //while (!feof(file) && (fgets(fbin, 1025, file) != NULL)) {
-    //    fbuffer->add(new DataPacket(fbin, 1025));
-    //}
-    
-    Socket::readFrom(skt, msg);
-    this->protocol->read_msg(msg);
-    
-    msg->set((t_byte*) str.c_str());
-    
-    Socket::sendTo(skt, msg);
-    
-    PRINT("Sending video stream...");
-    //do {
-    while (!feof(file) && (fread(fbin, 1, fsize, file) == fsize)) {
-        Socket::sendTo(skt, new DataPacket(fbin, 1025));
-        
-        PRINT("Enviado!");
-    }
-    //} while(aux != NULL);
-    
-    fclose (file);
-
-    //Socket::sendTo(skt, msg);
-*/    
     Socket::Close(skt);
-    //this->alive = false;
 }
+
+
+/*
+terminate called after throwing an instance of 'std::out_of_range'
+  what():  basic_string::at: __n (which is 3) >= this->size() (which is 2)
+Aborted (core dumped)
+*/

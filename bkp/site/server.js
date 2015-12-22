@@ -13,7 +13,11 @@ app.get('/lavid.png', function(req, res) {
   res.sendfile(__dirname + '/lavid.png');
 });
 
-app.get('/video.ogg', function(req, res) {
-  res.sendfile(__dirname + '/video.ogg');
+app.get('/lavid.jpg', function(req, res) {
+  res.sendfile(__dirname + '/lavid.jpg');
+});
+
+app.get('/video.mp4', function(req, res) {
+  res.sendfile(__dirname + '/video.mp4');
 });
 

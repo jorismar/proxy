@@ -5,6 +5,7 @@
 #include <thread>
 #include <chrono>
 #include <fcntl.h>
+#include <cstdio>
 
 #include "datapacket.h"
 #include "buffer.h"
@@ -15,14 +16,14 @@
 
 class Webserver {
     private:
-        Http * protocol;
+        Http * header;
         Socket * socket;
-        Buffer * buffer;
+        Buffer ** fbuffer;
         t_socket client;
         bool alive;
         
     public:
-        Webserver(std::string, int, Buffer*);
+        Webserver(int, Buffer**);
         virtual ~Webserver();
         
         void start();

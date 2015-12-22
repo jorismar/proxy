@@ -1,5 +1,6 @@
 #include <cstdlib>  //exit();
 #include <iostream> //cout
+#include <vector>
 
 #define EXIT_IF(cond, msg) \
     if ((cond)) { \

@@ -1,29 +1,27 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
-#include "datapacket.h"
+#include "virtualfile.h"
 
 class Buffer {
     private:
-        unsigned int r_pos;          // Posição de Leitura para next();
-        unsigned int w_pos;          // Posição de Escrita para add();
-        unsigned int buff_size;      // Tamanho do Buffer
-        unsigned int data_size;      // Tamanho do elemento
-        DataPacket **buffer;         // Buffer
+        t_pos r_pos;          // Posição de Leitura para next();
+        t_pos w_pos;          // Posição de Escrita para add();
+        t_pos buff_size;      // Tamanho do Buffer
+        VirtualFile **buffer;         // Buffer
         
     public:
-        Buffer(unsigned int, unsigned int);
+        Buffer(t_size);
         virtual ~Buffer();
         
-        int set(unsigned int, DataPacket*);
-        DataPacket* get(unsigned int);
+        int set(t_pos, VirtualFile*);
+        VirtualFile* get(t_pos);
 
-        DataPacket* next();
+        VirtualFile* next();
         
-        void add(DataPacket*);      
-        void remove(unsigned int);
+        void add(VirtualFile*);      
+        void remove(t_pos);
         
-        //int occupiedLength();
         int size();
 };
 
