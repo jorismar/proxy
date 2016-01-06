@@ -58,3 +58,7 @@ void Socket::Close() {
     close(this->svr_socket);
     close(this->cl_socket);
 }
+
+int Socket::getPort() {
+    return this->port;
+}

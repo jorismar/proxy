@@ -2,18 +2,18 @@
 
 Http::Http() {
     this->clear();
-    this->server_name       = "Lavid";
+    this->server_name       = "Lavid/Jorismar";
 }
 
 Http::~Http() {
     // NOT IMPLEMENTED
 }
 
-int Http::get_range_initial_pos() {
+int Http::get_start_range_pos() {
     return this->range[0];
 }
 
-int Http::get_range_final_pos() {
+int Http::get_end_range_pos() {
     return this->range[1];
 }
 
@@ -49,7 +49,6 @@ void Http::process(DataPacket * header) {
     std::string aux;
     std::string::size_type sz;
     std::string msg(header->get());
-    //PRINT(std::endl << msg << std::endl << std::endl);
     
     this->reqst_file = this->getfield(msg, "GET ", ' ');
     this->httpver    = this->getfield(msg, "HTTP/", '\n');
@@ -62,48 +61,100 @@ void Http::process(DataPacket * header) {
     this->if_modifd_since = this->getfield(msg, "If-Modified-Since: ", '\n');
     this->if_none_match = this->getfield(msg, "If-None-Match: ", '\n');
     
-    //this-> = this->getfield(msg, , '\n');
-    
     aux = this->getfield(msg, "Range: bytes=", '-');
-    if(aux.compare("") != 0)
-        this->range[0] = std::stoi(aux, &sz);
-    //aux = this->getfield(msg, "Range: bytes=" + aux + '-', '\n');
-    //this->range[1] = aux.compare("") != 0 ? std::stoi(aux, &sz) : 0;
+    
+    try {
+        try {
+            this->range[0] = std::stoi(aux, &sz);
+        } catch(const std::invalid_argument& ex) {
+            this->range[0] = 0;
+        }
+    } catch (const std::out_of_range& ex) {
+        this->range[0] = 0;
+    }
+    
+    aux = this->getfield(msg, "Range: bytes=" + aux + '-', '\n');
+    
+    try {
+        try {
+            this->range[1] = std::stoi(aux, &sz);
+        } catch(const std::invalid_argument& ex) {
+            this->range[1] = 0;
+        }
+    } catch (const std::out_of_range& ex) {
+        this->range[1] = 0;
+    }
+    
+    this->reqsttype = this->accpt.find("text/") != std::string::npos ? TYPE_TEXT :
+                        this->accpt.find("image/") != std::string::npos ? TYPE_IMAGE :
+                            this->accpt.find("video/") != std::string::npos && this->accpt.find("audio/") != std::string::npos ? TYPE_MEDIA :
+                                //this->accpt.find("application/") != std::string::npos ? TYPE_APP :
+                                    this->accpt.find("video/") != std::string::npos ? TYPE_VIDEO :
+                                        this->accpt.find("audio/") != std::string::npos ? TYPE_AUDIO :
+                                            this->accpt.find("*/*") != std::string::npos ? TYPE_ANY : -1;
 }
 
-std::string Http::generate(t_size filelen, std::string content_type, std::string last_modif_date) {
-    t_size content_lengh = filelen - this->range[0];
-    std::string resp;
+std::string Http::generate(t_size filelen, std::string filetype, std::string last_modif_date) {
+    std::string length = std::to_string(filelen > 0 ? filelen - this->range[0] : 70);
     std::string msg    = "";
+    std::string resp;
     std::string etag   = "\"\"";
     std::string time   = this->getDate();
+    std::string type   = "";
     
-    if(content_type.find("video/") != std::string::npos) {
-        resp = RPLY_NOT_MODIFIED;
+    if(filelen == 0) {
+        resp = RPLY_NOT_FOUND;
+        msg = msg + "x-content-type-options: nosniff\r\n";
+        msg = msg + "Content-Type: text/html; charset=UTF-8\r\n";
+        msg = msg + "Content-Length: " + length  + "\r\n";
+    } else {
         msg = msg + "Accept-Ranges: bytes"             + "\r\n";
         msg = msg + "Cache-Control: public, max-age=0" + "\r\n";
-        msg = msg + "Connection: keep-alive"           + "\r\n";
-        
+
         if(this->if_modifd_since.compare(last_modif_date) != 0 || this->if_none_match.compare(etag) != 0) {
-            resp = RPLY_PARTIAL_CONTENT;
-            msg = msg + "Content-Length: "      + std::to_string(content_lengh)  + "\r\n";
-            msg = msg + "Content-Range: bytes " + std::to_string(this->range[0]) + "-" + std::to_string(filelen - 1) + "/" + std::to_string(filelen) + "\r\n";
-            msg = msg + "Content-Type: "        + content_type + "\r\n";
-        }
-        
-        msg = msg + "Date: "          + time            + "\r\n";
-        msg = msg + "Etag: "          + etag            + "\r\n";
-        msg = msg + "Last-Modified: " + last_modif_date + "\r\n";
-        msg = msg + "X-Powered-By: "  + server_name     + "\r\n\r\n";
-    } else {
-        resp = RPLY_NOT_FOUND;
-        msg = msg + "Connection: keep-alive"                 + "\r\n";
-        msg = msg + "Content-Length: " + std::to_string(70)  + "\r\n";
-        msg = msg + "Content-Type: text/html; charset=utf-8" + "\r\n";
-        msg = msg + "Date: "           + time                + "\r\n";
-        msg = msg + "X-Powered-By: "   + server_name         + "\r\n";
-        msg = msg + "x-content-type-options: nosniff"        + "\r\n\r\n";
+            resp = RPLY_OK;
+    
+            if(this->reqsttype == TYPE_TEXT) {
+                type = type + "text/" + (!filetype.compare("htm") ? "html" : filetype) + "; charset=UTF-8";
+            } else if(this->reqsttype == TYPE_IMAGE) {
+                type = type + "image/" + filetype;
+            } else {
+                resp = RPLY_PARTIAL_CONTENT;
+                msg = msg + "Content-Range: bytes " + std::to_string(this->range[0]) + "-" + std::to_string(filelen - 1) + "/" + length + "\r\n";
+                
+                if(this->reqsttype == TYPE_MEDIA)
+                    type = !filetype.compare("mp4") || !filetype.compare("webm") || !filetype.compare("ogg") || !filetype.compare("m4s") ? type + "video/" + filetype : type + "audio/" + filetype;
+                else if(this->reqsttype == TYPE_VIDEO)
+                    type = type + "video/" + filetype;
+                else if(this->reqsttype == TYPE_AUDIO)
+                    type = type + "audio/" + filetype;
+                //else if(this->reqsttype == TYPE_APP)
+                    //type = type + "application/" + "javascript";
+                else if(this->reqsttype == TYPE_ANY) {
+                    type =  !filetype.compare("html") ? type + "text/" + filetype + "; charset=UTF-8" :
+                                !filetype.compare("jpg") || !filetype.compare("png") || !filetype.compare("gif") ? type + "image/" + filetype :
+                                    !filetype.compare("mp4") || !filetype.compare("webm") || !filetype.compare("ogg") || !filetype.compare("m4s") ? type + "video/" + filetype :
+                                        !filetype.compare("mp3") || !filetype.compare("acc") ? type + "audio/" + filetype :
+                                            !filetype.compare("js") ? "application/javascript" :
+                                                !filetype.compare("ico") ? "image/x-icon" : "";
+                                                //!filetype.compare("ico") ? "image/vnd.microsoft.icon" :
+                                                    
+                    if(type.find("video/") == std::string::npos && type.find("audio/") == std::string::npos)
+                        resp = RPLY_OK;
+                }
+            }
+                
+            msg = msg + "Content-Type: "   + type            + "\r\n";
+            msg = msg + "Content-Length: " + length          + "\r\n";
+        } else resp = RPLY_NOT_MODIFIED;
+
+        msg = msg + "Etag: "           + etag            + "\r\n";
+        msg = msg + "Last-Modified: "  + last_modif_date + "\r\n";
     }
+    
+    msg = msg + "Connection: keep-alive"                 + "\r\n";
+    msg = msg + "Date: "           + time                + "\r\n";
+    msg = msg + "X-Powered-By: "   + this->server_name   + "\r\n\r\n";
     
     return "HTTP/1.1 " + resp + "\r\n" + msg;
 }
@@ -111,7 +162,7 @@ std::string Http::generate(t_size filelen, std::string content_type, std::string
 std::string Http::getfield(std::string src, std::string mark, char sep) {
     std::string value = "";
     
-    for(int pos = src.find(mark) + mark.length(); pos != std::string::npos && src.at(pos) != '\0' && src.at(pos) != sep; pos++)
+    for(int pos = src.find(mark) + mark.length(); pos < src.length() && pos != std::string::npos && src.at(pos) != '\0' && src.at(pos) != sep; pos++)
         value += src.at(pos);
 
     return value;    
@@ -121,7 +172,7 @@ void Http::clear() {
     this->range[0]          = 0;
     this->range[1]          = 0;
     this->reqst_file        = "";
-    this->httpver      = "";
+    this->httpver           = "";
     this->accpt             = "";
     this->accpt_charset     = "";
     this->accpt_encoding    = "";
@@ -168,32 +219,3 @@ void Http::clear() {
     this->x_uidh            = "";
     this->x_wap_profile     = "";
 }
-
-/*    
-GET /video.mp4 HTTP/1.1
-Host: 192.168.77.132:3000
-User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:43.0) Gecko/20100101 Firefox/43.0
-Accept: video/webm,video/ogg,video/*;q=0.9,application/ogg;q=0.7,audio/*;q=0.6,**;q=0.5
-Accept-Language: pt-BR,pt;q=0.8,en-US;q=0.5,en;q=0.3
-DNT: 1
-Range: bytes=0-
-Referer: http://192.168.77.132:3000/
-Connection: keep-alive    
-If-Modified-Since: Mon, 21 Dec 2015 01:38:55 GMT
-If-None-Match: W/"11c8-151c2307798"    
-*/    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

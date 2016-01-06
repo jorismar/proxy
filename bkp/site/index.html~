@@ -6,9 +6,10 @@
             video { width: auto; height: auto; }
             .center { margin: auto; display: block; }
         </style>
+	<link rel="shortcut icon" href="/favicon.ico">
     </head>
     <body>
-        <video id="videoplayer" poster="lavid.png" class="center" src="http://192.168.77.132:8080/video.mp4" type="video/mp4"></video>
+        <video controls autoplay id="videoplayer" poster="lavid.png" class="center" src="video.mp4" type="video/mp4"></video>
     </body>
 </html>
 

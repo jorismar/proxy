@@ -21,3 +21,8 @@ app.get('/video.mp4', function(req, res) {
   res.sendfile(__dirname + '/video.mp4');
 });
 
+app.get('/favicon.ico', function(req, res) {
+  res.sendfile(__dirname + '/favicon.ico');
+});
+
+

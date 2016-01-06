@@ -1,5 +1,13 @@
 #include "virtualfile.h"
 
+VirtualFile::VirtualFile() {
+    this->name = "";
+    this->type = "";
+    this->modifd = "";
+    this->bin  = NULL;
+    this->len  = 0;
+}
+
 VirtualFile::VirtualFile(std::string filename, std::string type, std::string modified_date) {
     this->name = filename;
     this->type = type;
@@ -22,6 +30,14 @@ VirtualFile::~VirtualFile() {
 
 void VirtualFile::setFilename(std::string filename) {
     this->name = filename;
+}
+
+void VirtualFile::setFiletype(std::string type) {
+    this->type = type;
+}
+
+void VirtualFile::setModifiedDate(std::string modified_date) {
+    this->modifd = modified_date;
 }
 
 void VirtualFile::setBinary(t_byte * bin, t_size size) {

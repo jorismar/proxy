@@ -62,9 +62,13 @@
 #define RPLY_NETWRK_AUTHENT_REQ     "511"
 
 //Content Type
-#define TYPE_MP4  "video/mp4"
-#define TYPE_OGG  "video/ogg"
-#define TYPE_WEBM "video/webm"
+#define TYPE_TEXT   0   // html
+#define TYPE_IMAGE  1   // jpg, png, gif, etc.
+#define TYPE_MEDIA  2   // mp3, mp4, ogg, webm, m4s, etc.
+#define TYPE_VIDEO  3   // mp4, ogg, webm
+#define TYPE_AUDIO  4   // mp4, mp3
+//#define TYPE_APP    5
+#define TYPE_ANY    6   // */*
 
 // Connection
 #define CLOSE       "close"
@@ -74,6 +78,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <ctime>
+#include <stdexcept>
 #include "types.h"
 #include "datapacket.h"
 
@@ -131,12 +136,14 @@ class Http {
 
         std::string getfield(std::string, std::string, char);
         
+        short reqsttype;
+        
     public:
         Http();
         virtual ~Http();
         
-        int get_range_initial_pos();
-        int get_range_final_pos();
+        int get_start_range_pos();
+        int get_end_range_pos();
         std::string get_connection_state();
         std::string get_host();
         std::string get_reqsted_file();

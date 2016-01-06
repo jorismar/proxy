@@ -14,12 +14,12 @@
 Buffer * filebuffer = new Buffer(100);
 
 void webserver() {
-    Webserver * svr = new Webserver(8080, &filebuffer);
+    Webserver * svr = new Webserver(8080, &filebuffer, "/home/jorismar/proxy/bkp/site");
     svr->start();
 }
 
 void file_generator() {
-	int count;
+/*	int count;
 	char * bin;
 	FILE * pfile;
 	
@@ -37,7 +37,7 @@ void file_generator() {
 
 	filebuffer->add(new VirtualFile("video.mp4", TYPE_MP4, Http::getDate(), bin, fsize));
 	
-	fclose(pfile);
+	fclose(pfile);*/
 }
 
 int main() {

@@ -6,6 +6,7 @@
 #include <chrono>
 #include <fcntl.h>
 #include <cstdio>
+#include <cstddef>
 
 #include "datapacket.h"
 #include "buffer.h"
@@ -18,18 +19,22 @@ class Webserver {
     private:
         Http * header;
         Socket * socket;
-        Buffer ** fbuffer;
+        Buffer * page_buffer;
+        Buffer ** dash_buffer;
         t_socket client;
+        std::string page_path;
         bool alive;
         
     public:
-        Webserver(int, Buffer**);
+        Webserver(int, Buffer**, std::string);
         virtual ~Webserver();
         
         void start();
         void stop();
         
-        void startClient();
+        VirtualFile* getFile(Http*);
+        VirtualFile* openFile(std::string);
+        void startClient(t_socket);
 };
 
 #endif

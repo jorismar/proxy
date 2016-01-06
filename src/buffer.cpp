@@ -4,7 +4,7 @@ Buffer::Buffer(t_size buffer_size) {
     this->r_pos     = 0;
     this->w_pos     = 0;
     this->buff_size = buffer_size;
-    this->buffer    = (VirtualFile**) malloc(sizeof(VirtualFile) * buffer_size);
+    this->buffer    = (VirtualFile**) malloc(sizeof(VirtualFile*) * buffer_size);
 }
 
 Buffer::~Buffer() {
@@ -20,21 +20,25 @@ int Buffer::set(t_pos index, VirtualFile * file) {
 }
 
 VirtualFile * Buffer::get(t_pos index) {
-    VirtualFile * file;
+    VirtualFile * file = NULL;
     
     if(index < this->buff_size)
         file = this->buffer[index];
+    //else file = new VirtualFile();
         
     return file;
 }
 
 VirtualFile * Buffer::next() {
+    VirtualFile * file = NULL;
     t_pos index = this->r_pos;
     
-    if(this->buffer[index] != NULL)
+    if(this->buffer[index] != NULL) {
         this->r_pos = ++this->r_pos % this->buff_size;
+        file = this->buffer[index];
+    }
 
-    return this->buffer[index];
+    return file;
 }
 
 void Buffer::add(VirtualFile * file) {

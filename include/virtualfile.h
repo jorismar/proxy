@@ -15,11 +15,14 @@ class VirtualFile {
         t_size len;
         
     public:
+        VirtualFile();
         VirtualFile(std::string, std::string, std::string);
         VirtualFile(std::string, std::string, std::string, t_byte*, t_size);
         virtual ~VirtualFile();
         
         void setFilename(std::string);
+        void setFiletype(std::string);
+        void setModifiedDate(std::string);
         void setBinary(t_byte*, t_size);
 
         std::string filename();
