@@ -50,7 +50,7 @@ void Webserver::startClient(t_socket cl) {
     
     Socket::readFrom(cl, packet, 1024);
     
-    PRINT(packet)
+    //PRINT(packet)
     
     header->process(packet);
 
