@@ -20,7 +20,7 @@ DataPacket::DataPacket(t_byte * data, t_size size) {
 }
 
 DataPacket::~DataPacket() {
-    // NOT IMPLEMENTED
+    free(this->data);
 }
 
 t_byte* DataPacket::get() { 

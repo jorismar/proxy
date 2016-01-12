@@ -154,7 +154,7 @@ class Http {
         
         void setServerName(std::string);
         
-        void process(DataPacket*);
+        void process(t_byte*);
         std::string generate(t_size, std::string, std::string);
         void clear();
         

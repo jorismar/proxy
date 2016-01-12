@@ -3,7 +3,8 @@
 Socket::Socket(int port) {
     this->svr_socket = socket(AF_INET,SOCK_STREAM,0);
     
-    EXIT_IF(svr_socket < 0, "ERROR: Failed to open socket.");
+    if(svr_socket < 0)
+        PRINT("ERROR: Failed to open socket.");
     
     this->port = port;
 }
@@ -22,8 +23,9 @@ int Socket::Bind() {
     this->svr_addr.sin_port = htons(this->port);
     
     r = bind(this->svr_socket, (struct sockaddr*) &this->svr_addr, sizeof(this->svr_addr));
-        
-    EXIT_IF(r < 0, "ERROR on binding");
+    
+    if(r < 0)
+        PRINT("ERROR on binding");
     
     return r;
 }
@@ -33,7 +35,8 @@ int Socket::Listen(int backlog) {
     
     r = listen(this->svr_socket, backlog);
     
-    EXIT_IF(r < 0, "ERROR on listening");
+    if(r < 0)
+        PRINT("ERROR on listening");
     
     return r;
 }
@@ -41,7 +44,8 @@ int Socket::Listen(int backlog) {
 t_socket Socket::Accept() {
     this->cl_socket = accept(this->svr_socket, (struct sockaddr*) &this->cl_socket, &this->cl_socket_len);
     
-    EXIT_IF(this->cl_socket < 0, "ERROR on accept");
+    if(this->cl_socket < 0)
+        PRINT("ERROR on accept");
     
     return cl_socket;
 }
@@ -61,4 +65,8 @@ void Socket::Close() {
 
 int Socket::getPort() {
     return this->port;
+}
+
+int Socket::setPort(int port) {
+    this->port = port;
 }

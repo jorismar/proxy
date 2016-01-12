@@ -45,62 +45,53 @@ void Http::setServerName(std::string name) {
     this->server_name = name;
 }
 
-void Http::process(DataPacket * header) {
-    std::string aux;
-    std::string::size_type sz;
-    std::string msg(header->get());
+void Http::process(t_byte * header) {
+    std::string msg(header);
     
     this->reqst_file = this->getfield(msg, "GET ", ' ');
-    this->httpver    = this->getfield(msg, "HTTP/", '\n');
-    this->host       = this->getfield(msg, "Host: ", '\n');
-    this->user_agent = this->getfield(msg, "User-Agent: ", '\n');
-    this->accpt      = this->getfield(msg, "Accept: ", '\n');
-    this->accpt_lang = this->getfield(msg, "Accept-Language: ", '\n');
-    this->referer    = this->getfield(msg, "Referer: ", '\n');
-    this->connection = this->getfield(msg, "Connection: ", '\n');
-    this->if_modifd_since = this->getfield(msg, "If-Modified-Since: ", '\n');
-    this->if_none_match = this->getfield(msg, "If-None-Match: ", '\n');
+//  this->httpver    = this->getfield(msg, "HTTP/", '\n');
+//  this->host       = this->getfield(msg, "Host: ", '\n');
+//  this->user_agent = this->getfield(msg, "User-Agent: ", '\n');
+//  this->accpt      = this->getfield(msg, "Accept: ", '\n');
+//  this->accpt_lang = this->getfield(msg, "Accept-Language: ", '\n');
+//  this->referer    = this->getfield(msg, "Referer: ", '\n');
+//  this->connection = this->getfield(msg, "Connection: ", '\n');
+//  this->if_modifd_since = this->getfield(msg, "If-Modified-Since: ", '\n');
+//  this->if_none_match = this->getfield(msg, "If-None-Match: ", '\n');
     
-    aux = this->getfield(msg, "Range: bytes=", '-');
-    
-    try {
-        try {
-            this->range[0] = std::stoi(aux, &sz);
-        } catch(const std::invalid_argument& ex) {
-            this->range[0] = 0;
+    this->range[0] = -1;
+    this->range[1] = -1;
+
+    {
+        std::string aux;
+        std::string::size_type sz;
+
+        aux = this->getfield(msg, "Range: bytes=", '-');
+        
+        if(aux.compare("") != 0) {
+            try {
+                try {
+                    this->range[0] = std::stoi(aux, &sz);
+                } catch(const std::invalid_argument& ex) {}
+            } catch (const std::out_of_range& ex) {}
+            
+            aux = this->getfield(msg, "Range: bytes=" + aux + '-', '\n');
+            
+            try {
+                try {
+                    this->range[1] = std::stoi(aux, &sz);
+                } catch(const std::invalid_argument& ex) {}
+            } catch (const std::out_of_range& ex) {}
         }
-    } catch (const std::out_of_range& ex) {
-        this->range[0] = 0;
     }
-    
-    aux = this->getfield(msg, "Range: bytes=" + aux + '-', '\n');
-    
-    try {
-        try {
-            this->range[1] = std::stoi(aux, &sz);
-        } catch(const std::invalid_argument& ex) {
-            this->range[1] = 0;
-        }
-    } catch (const std::out_of_range& ex) {
-        this->range[1] = 0;
-    }
-    
-    this->reqsttype = this->accpt.find("text/") != std::string::npos ? TYPE_TEXT :
-                        this->accpt.find("image/") != std::string::npos ? TYPE_IMAGE :
-                            this->accpt.find("video/") != std::string::npos && this->accpt.find("audio/") != std::string::npos ? TYPE_MEDIA :
-                                //this->accpt.find("application/") != std::string::npos ? TYPE_APP :
-                                    this->accpt.find("video/") != std::string::npos ? TYPE_VIDEO :
-                                        this->accpt.find("audio/") != std::string::npos ? TYPE_AUDIO :
-                                            this->accpt.find("*/*") != std::string::npos ? TYPE_ANY : -1;
 }
 
 std::string Http::generate(t_size filelen, std::string filetype, std::string last_modif_date) {
-    std::string length = std::to_string(filelen > 0 ? filelen - this->range[0] : 70);
+    std::string length = std::to_string(filelen > 0 ? filelen : 70);
     std::string msg    = "";
     std::string resp;
     std::string etag   = "\"\"";
     std::string time   = this->getDate();
-    std::string type   = "";
     
     if(filelen == 0) {
         resp = RPLY_NOT_FOUND;
@@ -114,36 +105,23 @@ std::string Http::generate(t_size filelen, std::string filetype, std::string las
         if(this->if_modifd_since.compare(last_modif_date) != 0 || this->if_none_match.compare(etag) != 0) {
             resp = RPLY_OK;
     
-            if(this->reqsttype == TYPE_TEXT) {
-                type = type + "text/" + (!filetype.compare("htm") ? "html" : filetype) + "; charset=UTF-8";
-            } else if(this->reqsttype == TYPE_IMAGE) {
-                type = type + "image/" + filetype;
-            } else {
+            if(this->range[0] >= 0)
                 resp = RPLY_PARTIAL_CONTENT;
-                msg = msg + "Content-Range: bytes " + std::to_string(this->range[0]) + "-" + std::to_string(filelen - 1) + "/" + length + "\r\n";
-                
-                if(this->reqsttype == TYPE_MEDIA)
-                    type = !filetype.compare("mp4") || !filetype.compare("webm") || !filetype.compare("ogg") || !filetype.compare("m4s") ? type + "video/" + filetype : type + "audio/" + filetype;
-                else if(this->reqsttype == TYPE_VIDEO)
-                    type = type + "video/" + filetype;
-                else if(this->reqsttype == TYPE_AUDIO)
-                    type = type + "audio/" + filetype;
-                //else if(this->reqsttype == TYPE_APP)
-                    //type = type + "application/" + "javascript";
-                else if(this->reqsttype == TYPE_ANY) {
-                    type =  !filetype.compare("html") ? type + "text/" + filetype + "; charset=UTF-8" :
-                                !filetype.compare("jpg") || !filetype.compare("png") || !filetype.compare("gif") ? type + "image/" + filetype :
-                                    !filetype.compare("mp4") || !filetype.compare("webm") || !filetype.compare("ogg") || !filetype.compare("m4s") ? type + "video/" + filetype :
-                                        !filetype.compare("mp3") || !filetype.compare("acc") ? type + "audio/" + filetype :
-                                            !filetype.compare("js") ? "application/javascript" :
-                                                !filetype.compare("ico") ? "image/x-icon" : "";
-                                                //!filetype.compare("ico") ? "image/vnd.microsoft.icon" :
-                                                    
-                    if(type.find("video/") == std::string::npos && type.find("audio/") == std::string::npos)
-                        resp = RPLY_OK;
-                }
-            }
-                
+            else this->range[0] = 0;
+            
+            msg = msg + "Content-Range: bytes " + std::to_string(this->range[0]) + "-" + std::to_string(filelen - 1) + "/" + length + "\r\n";
+
+            std::string type = "";
+            
+            type =  !filetype.compare("html") || !filetype.compare("htm") ? type + "text/html; charset=UTF-8" :
+                        !filetype.compare("jpg") || !filetype.compare("png") || !filetype.compare("gif") ? type + "image/" + filetype :
+                            !filetype.compare("mp4") || !filetype.compare("webm") || !filetype.compare("ogg") ? type + "video/" + filetype :
+                                !filetype.compare("mp3") || !filetype.compare("acc") ? type + "audio/" + filetype :
+                                    !filetype.compare("js") ? "application/javascript" :
+                                        !filetype.compare("mpd") || !filetype.compare("m4s") ? "application/octet-stream" :
+                                            !filetype.compare("ico") ? "image/x-icon" : "";
+                                            //!filetype.compare("ico") ? "image/vnd.microsoft.icon" :
+        
             msg = msg + "Content-Type: "   + type            + "\r\n";
             msg = msg + "Content-Length: " + length          + "\r\n";
         } else resp = RPLY_NOT_MODIFIED;

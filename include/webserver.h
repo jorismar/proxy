@@ -20,21 +20,29 @@ class Webserver {
         Http * header;
         Socket * socket;
         Buffer * page_buffer;
-        Buffer ** dash_buffer;
+        Buffer ** v_dash_buffer;
+        Buffer ** a_dash_buffer;
         t_socket client;
         std::string page_path;
         bool alive;
+        int port;
+        bool sequential_read_buffer;    // if true, checking the name of the dash file will be ignored
+        t_pos current;
         
     public:
-        Webserver(int, Buffer**, std::string);
+        Webserver(int, Buffer**, Buffer**, std::string, bool);
         virtual ~Webserver();
         
+        bool openConnection();
         void start();
         void stop();
         
-        VirtualFile* getFile(Http*);
-        VirtualFile* openFile(std::string);
+        VirtualFile* getFile(std::string);
+        VirtualFile* readFile(std::string, std::string);
+        VirtualFile* readExternalBuffer(std::string);
         void startClient(t_socket);
+        
+        void setPort(int);
 };
 
 #endif

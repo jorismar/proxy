@@ -15,7 +15,7 @@ int Buffer::set(t_pos index, VirtualFile * file) {
     if(!(index < this->buff_size)) return 1;
     
     this->buffer[index] = file;
-
+    
     return 0;
 }
 
@@ -24,27 +24,28 @@ VirtualFile * Buffer::get(t_pos index) {
     
     if(index < this->buff_size)
         file = this->buffer[index];
-    //else file = new VirtualFile();
         
     return file;
 }
 
 VirtualFile * Buffer::next() {
     VirtualFile * file = NULL;
-    t_pos index = this->r_pos;
     
-    if(this->buffer[index] != NULL) {
+    if(this->buffer[this->r_pos] != NULL) {
+        file = this->buffer[this->r_pos];
         this->r_pos = ++this->r_pos % this->buff_size;
-        file = this->buffer[index];
     }
-
+    
     return file;
 }
 
-void Buffer::add(VirtualFile * file) {
-    this->set(this->w_pos, file);
+int Buffer::add(VirtualFile * file) {
+    if(this->set(this->w_pos, file) == 1)
+        return 1;
     
     this->w_pos = ++this->w_pos % this->buff_size;
+    
+    return 0;
 }
 
 void Buffer::remove(t_pos index) {

@@ -1,16 +1,22 @@
 #include "webserver.h"
 
-Webserver::Webserver(int svr_port, Buffer **extern_buffer, std::string path) {
-    this->socket = new Socket(svr_port);
-    //this->page_buffer = new Buffer(500);
-    this->dash_buffer = extern_buffer;
+Webserver::Webserver(int svr_port, Buffer **video_buffer, Buffer **audio_buffer, std::string path, bool is_sequential) {
+    this->port = svr_port;
+    this->v_dash_buffer = video_buffer;
+    this->a_dash_buffer = audio_buffer;
     this->page_path = path;
+    this->sequential_read_buffer = is_sequential;
+    this->current = 0;
 }
 
 Webserver::~Webserver() {
     this->alive = false;
     this->socket->~Socket();
-    //this->page_buffer->~Buffer();
+}
+
+bool Webserver::openConnection() {
+    this->socket = new Socket(this->port);
+    return this->socket->Bind() >= 0 && this->socket->Listen(10) >= 0;
 }
 
 void Webserver::start() {
@@ -18,9 +24,6 @@ void Webserver::start() {
     
     this->alive = true;
 
-    this->socket->Bind();
-    this->socket->Listen(10);
-    
     PRINT("Server running on port: " << this->socket->getPort());
     
     while(alive) {
@@ -39,60 +42,55 @@ void Webserver::stop() {
 }
 
 void Webserver::startClient(t_socket cl) {
-    std::string hder;
-    t_socket skt = cl;
     VirtualFile * file;
-    char * buff;
-    DataPacket * packet = new DataPacket(1024);
     Http * header = new Http();
+    std::string hder;
     t_size filesize = 0;
+    t_byte * packet = (t_byte*) malloc(sizeof(t_byte) * 1024);
     
-    Socket::readFrom(skt, packet);
+    Socket::readFrom(cl, packet, 1024);
     header->process(packet);
+
+    free(packet);
     
-    file = this->getFile(header);
+    file = this->getFile(header->get_reqsted_file());
     
     if(file != NULL) {
         hder = header->generate(file->size(), file->filetype(), file->filemodified_date());
         filesize = file->size();
     } else hder = header->generate(0, "", "");
     
-    buff = (t_byte*) malloc(sizeof(t_byte) * (hder.length() + filesize));
+    packet = (t_byte*) malloc(sizeof(t_byte) * (hder.length() + filesize));
     
-    memcpy(buff, hder.c_str(), hder.length());
+    memcpy(packet, hder.c_str(), hder.length());
     
     if(file != NULL)
-        memcpy(buff + hder.length(), file->binary() + header->get_start_range_pos(), file->size() - header->get_start_range_pos());
+        memcpy(packet + hder.length(), file->binary() + header->get_start_range_pos(), filesize - header->get_start_range_pos());
     
-    Socket::sendTo(skt, buff, hder.length() + filesize);
-
-    Socket::Close(skt);
+    Socket::sendTo(cl, packet, hder.length() + filesize);
+    
+    Socket::Close(cl);
 }
 
-VirtualFile * Webserver::getFile(Http * header) {
+VirtualFile * Webserver::getFile(std::string filename) {
     int i = 0;
-    std::string filename = header->get_reqsted_file();
+    std::string filetype = filename.substr(filename.rfind(".", filename.length() - 1) + 1, filename.length());
     VirtualFile * file = NULL;
     
-    if(!filename.compare("/"))
-        filename = "/index.html";
-    /** Remover comentário para manter os arquivos da página em memória **/
-    
-    //do {
-    //    file = this->page_buffer->get(i++);
-    //} while(file != NULL && file->filename().compare(filename) != 0 && i < this->page_buffer->size());
-    
-    //if(file == NULL) {
-        file = this->openFile(filename);
-        
-        //if(file != NULL)
-            //this->page_buffer->add(file);
-    //}
+    if(!filetype.compare("m4s")) {
+        file = this->readExternalBuffer(filename);
+    } else {
+        if(!filename.compare("/")) {
+            filename = "/index.html";
+            filetype = "html";
+        }
+        file = this->readFile(filename, filetype);
+    }
     
     return file;
 }
 
-VirtualFile * Webserver::openFile(std::string filename) {
+VirtualFile * Webserver::readFile(std::string filename, std::string filetype) {
 	int count;
 	char * bin;
 	FILE * pfile;
@@ -111,13 +109,34 @@ VirtualFile * Webserver::openFile(std::string filename) {
 
     count = fread(bin, 1, fsize, pfile);
     
-    vfile = new VirtualFile(filename, filename.substr(filename.rfind(".", filename.length() - 1) + 1, filename.length()), Http::getDate(), bin, fsize);
+    vfile = new VirtualFile(filename, filetype, Http::getDate(), bin, count);
 
     fclose(pfile);
         
     return vfile;
 }
 
+VirtualFile * Webserver::readExternalBuffer(std::string filename) {
+    VirtualFile * file = NULL;
+    Buffer ** buff = filename.find("vid") != std::string::npos ? v_dash_buffer : a_dash_buffer;
+    // Se necessário, inserir comparativo para audio
+    
+    if(!this->sequential_read_buffer) {
+        do {
+            file = (*buff)->get(this->current);
+            this->current = ++current % (*buff)->size();
+        } while(file != NULL && filename.find(file->filename()) == std::string::npos /*&& i < (*buff)->size()*/);
+    } else file = (*buff)->next();
+    
+    return file;
+}
+
+void Webserver::setPort(int port) {
+    this->port = port;
+}
+
+//MP4Box -dash 4000 -rap -segment-name -profile live -out video.mpd video.mp4#video video.mp4#audio
+//MP4Box -dash 4000 -rap -profile live -out video.mpd video.mp4#video video.mp4#audio
 //EXIT_IF(pfile == NULL, "Error: File not found.");
 //std::thread cl(&Webserver::startClient, this);
 //std::this_thread::sleep_for (std::chrono::milliseconds(1000));

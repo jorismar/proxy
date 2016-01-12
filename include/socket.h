@@ -28,9 +28,14 @@ class Socket {
         int Send(DataPacket*);
         void Close();
         int getPort();
+        int setPort(int);
         
         static int readFrom(t_socket orig, DataPacket * data) {
             return read(orig, data->get(), data->size());
+        }
+        
+        static int readFrom(t_socket orig, t_byte * data, t_size size) {
+            return read(orig, data, size);
         }
         
         static int sendTo(t_socket dest, DataPacket * data) {
