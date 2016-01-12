@@ -49,6 +49,9 @@ void Webserver::startClient(t_socket cl) {
     t_byte * packet = (t_byte*) malloc(sizeof(t_byte) * 1024);
     
     Socket::readFrom(cl, packet, 1024);
+    
+    PRINT(packet)
+    
     header->process(packet);
 
     free(packet);
