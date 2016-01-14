@@ -1,10 +1,10 @@
 #include "socket.h"
 
 Socket::Socket(int port) {
-    this->svr_socket = socket(AF_INET,SOCK_STREAM,0);
+    this->svr_socket = socket(AF_INET, SOCK_STREAM, 0);
     
     if(svr_socket < 0)
-        PRINT("ERROR: Failed to open socket.");
+        perror("ERROR on open socket");
     
     this->port = port;
 }
@@ -25,7 +25,7 @@ int Socket::Bind() {
     r = bind(this->svr_socket, (struct sockaddr*) &this->svr_addr, sizeof(this->svr_addr));
     
     if(r < 0)
-        PRINT("ERROR on binding");
+        perror("ERROR on binding");
     
     return r;
 }
@@ -36,7 +36,7 @@ int Socket::Listen(int backlog) {
     r = listen(this->svr_socket, backlog);
     
     if(r < 0)
-        PRINT("ERROR on listening");
+        perror("ERROR on listening");
     
     return r;
 }
@@ -45,7 +45,7 @@ t_socket Socket::Accept() {
     this->cl_socket = accept(this->svr_socket, (struct sockaddr*) &this->cl_socket, &this->cl_socket_len);
     
     if(this->cl_socket < 0)
-        PRINT("ERROR on accept");
+        perror("ERROR on accept");
     
     return cl_socket;
 }

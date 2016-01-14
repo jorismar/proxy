@@ -24,7 +24,7 @@ void Webserver::start() {
     
     this->alive = true;
 
-    PRINT("Server running on port: " << this->socket->getPort());
+    PRINT("Session running on port: " << this->socket->getPort());
     
     while(alive) {
         client = this->socket->Accept();
@@ -32,7 +32,7 @@ void Webserver::start() {
         cl.detach();
     }
     
-    PRINT("Server stoped!")
+    PRINT("Session closed!")
 
     this->socket->Close();
 }

@@ -3,6 +3,8 @@
 Session::Session(std::string id, int udp_port, t_size buffer_size, int http_port, std::string path) {
     this->id = id;
     this->path = path;
+    this->udp_port = udp_port;
+    this->http_port = http_port;
     this->video_dash_buffer = new Buffer(buffer_size);
     this->audio_dash_buffer = new Buffer(buffer_size - 1);
 //  this->dashserver = new Dashcast(udp_port, &this->dashbuffer);
@@ -85,4 +87,12 @@ void Session::setUdpPort(int port) {
 
 void Session::setHttpPort(int port) {
     this->webserver->setPort(port);
+}
+
+int Session::getUdpPort() {
+    return this->udp_port;
+}
+
+int Session::getHttpPort() {
+    return this->http_port;
 }

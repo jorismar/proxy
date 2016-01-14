@@ -8,6 +8,8 @@ class Session {
     private:
         std::string id;
         std::string path;
+        int udp_port;
+        int http_port;
         Webserver * webserver;
         Buffer * video_dash_buffer;
         Buffer * audio_dash_buffer;
@@ -27,4 +29,9 @@ class Session {
         std::string getID();
         void setUdpPort(int);
         void setHttpPort(int);
+        
+        int getUdpPort();
+        int getHttpPort();
+        
+        // implementar get ports
 };

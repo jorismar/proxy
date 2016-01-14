@@ -119,7 +119,8 @@ std::string Http::generate(t_size filelen, std::string filetype, std::string las
                                 !filetype.compare("mp3") || !filetype.compare("acc") ? type + "audio/" + filetype :
                                     !filetype.compare("js") ? "application/javascript" :
                                         !filetype.compare("mpd") || !filetype.compare("m4s") ? "application/octet-stream" :
-                                            !filetype.compare("ico") ? "image/x-icon" : "";
+                                            !filetype.compare("json") ? "application/json" :
+                                                !filetype.compare("ico") ? "image/x-icon" : "";
                                             //!filetype.compare("ico") ? "image/vnd.microsoft.icon" :
         
             msg = msg + "Content-Type: "   + type            + "\r\n";
