@@ -1,5 +1,12 @@
 #include "socket.h"
 
+Socket::Socket() {
+    this->svr_socket = socket(AF_INET, SOCK_STREAM, 0);
+    
+    if(svr_socket < 0)
+        perror("ERROR on open socket");
+}
+
 Socket::Socket(int port) {
     this->svr_socket = socket(AF_INET, SOCK_STREAM, 0);
     
@@ -14,13 +21,17 @@ Socket::~Socket() {
 }
 
 int Socket::Bind() {
+    return this->Bind(this->port);
+}
+
+int Socket::Bind(int port) {
     int r;
     
     memset((char*) &this->svr_addr, 0, sizeof(this->svr_addr));
     
     this->svr_addr.sin_family = AF_INET;
     this->svr_addr.sin_addr.s_addr = INADDR_ANY;
-    this->svr_addr.sin_port = htons(this->port);
+    this->svr_addr.sin_port = htons(port);
     
     r = bind(this->svr_socket, (struct sockaddr*) &this->svr_addr, sizeof(this->svr_addr));
     
@@ -50,12 +61,31 @@ t_socket Socket::Accept() {
     return cl_socket;
 }
 
-int Socket::Read(DataPacket * data) {
-    return read(this->cl_socket, data->get(), data->size());
+int Socket::Connect(std::string ip, int port) {
+    int r;
+    
+    this->svr_addr.sin_addr.s_addr = inet_addr(ip.c_str());
+    this->svr_addr.sin_family = AF_INET;
+    this->svr_addr.sin_port = htons(port);
+    
+    r = connect(this->svr_socket, (struct sockaddr*) &this->svr_addr, sizeof(this->svr_addr));
+    
+    if(r < 0)
+        perror("ERROR on connect");
+    
+    return r;
 }
 
-int Socket::Send(DataPacket * data) {
-    return send(this->cl_socket, data->get(), data->size(), 0);
+int Socket::Read(t_byte * data, t_size length) {
+    return read(this->cl_socket, data, length);
+}
+
+int Socket::Send(t_byte * data, t_size length) {
+    return send(this->svr_socket, data, length, 0);
+}
+
+int Socket::Response(t_byte * data, t_size length) {
+    return send(this->cl_socket, data, length, 0);
 }
 
 void Socket::Close() {

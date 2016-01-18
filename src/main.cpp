@@ -16,9 +16,38 @@
 int g_http_port;
 int g_udp_port;
 std::string g_path;
-std::string ip = "127.0.0.1";
+std::string server_ip = "127.0.0.1";
+int server_port = 8080;
+std::string arthron_ip = "";
+int arthron_port = 99999;
 
 Buffer * g_dashbuffer = new Buffer(100);
+
+bool signIn(std::string ip, int port) {
+	Http * header = new Http();
+	Socket * socket = new Socket();
+	t_byte * buffer;
+	std::string request;
+	
+	EXIT_IF(socket->Connect(ip, port) < 0, "");
+	
+	std::string json_msg = "{\n\"command\" : \"connect\",\n\"ip\" : \"" + server_ip + "\",\n\"port\" : \"" + std::to_string(server_port) + "\"\n}";
+	
+	request = header->genRequest("", (t_size) json_msg.length(), "*/*", ip + ":" + std::to_string(port), Http::Type::POST);
+	
+	buffer = (t_byte*) malloc(sizeof(t_byte) * (request.length() + json_msg.length()));
+	
+	memcpy(buffer, request.c_str(), request.length());
+	memcpy(buffer + request.length(), json_msg.c_str(), json_msg.length());
+	
+	EXIT_IF(socket->Send(buffer, request.length() + json_msg.length()) < 0, "");
+	
+	socket->Close();
+	
+	// Se necessário, implementar processamento de mensagem de confirmação
+	
+	return true;
+}
 
 void start() {
 	int i, json_msg_size;
@@ -49,7 +78,7 @@ void start() {
 		
 		PRINT(packet)
 		
-		header->process(packet);
+		header->processRequest(packet);
 		
 		filename = header->get_reqsted_file();
 		
@@ -81,7 +110,7 @@ void start() {
 				
 				json_msg = "";
 				
-				json_msg = json_msg + "{\n\"response\" : \"ok\",\n\"ip\" : \"" + ip + "\",\n\"udp\" : \"" + std::to_string(sessions.back()->getUdpPort()) + "\",\n\"http\" : \"" + std::to_string(sessions.back()->getHttpPort()) + "\"\n}";
+				json_msg = json_msg + "{\n\"response\" : \"ok\",\n\"ip\" : \"" + server_ip + "\",\n\"udp\" : \"" + std::to_string(sessions.back()->getUdpPort()) + "\",\n\"http\" : \"" + std::to_string(sessions.back()->getHttpPort()) + "\"\n}";
 			} else if(json_msg.find("\"command\" : \"close\"", json_msg.length() - 1) != std::string::npos) {
 				aux = "\"session_id\" : \"";
 				
@@ -102,8 +131,8 @@ void start() {
 				json_msg = "{\n\"response\" : \"error\"\n}";
 			}
 			
-			resp_header = header->generate(json_msg.length(), "json", "");
-		} else resp_header = header->generate(0, "", "");
+			resp_header = header->genResponse(json_msg.length(), "json", "");
+		} else resp_header = header->genResponse(0, "", "");
 
 		free(packet);
 
@@ -122,11 +151,26 @@ void start() {
 	}//20161006528620
 }
 
-int main() {
-	g_http_port = 8080;
+int main(int argc, char *argv[]) {
+	g_http_port = server_port;
 	g_udp_port = 1234;
 	
-	start();
+	if(signIn(arthron_ip, arthron_port))
+		start();
 
     return 0;
 }
+
+/*
+POST /file.json HTTP/1.1
+Host: 192.168.15.128:8080
+Connection: keep-alive
+Content-Length: 0
+User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.111 Safari/537.36
+Cache-Control: no-cache
+Origin: chrome-extension://mkhojklkhkdaghjjfdnphfphiaiohkef
+Accept: **
+DNT: 1
+Accept-Encoding: gzip, deflate
+Accept-Language: pt-BR,pt;q=0.8,en-US;q=0.6,en;q=0.4
+*/

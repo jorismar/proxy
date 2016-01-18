@@ -52,16 +52,16 @@ void Webserver::startClient(t_socket cl) {
     
     //PRINT(packet)
     
-    header->process(packet);
+    header->processRequest(packet);
 
     free(packet);
     
     file = this->getFile(header->get_reqsted_file());
     
     if(file != NULL) {
-        hder = header->generate(file->size(), file->filetype(), file->filemodified_date());
+        hder = header->genResponse(file->size(), file->filetype(), file->filemodified_date());
         filesize = file->size();
-    } else hder = header->generate(0, "", "");
+    } else hder = header->genResponse(0, "", "");
     
     packet = (t_byte*) malloc(sizeof(t_byte) * (hder.length() + filesize));
     

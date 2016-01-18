@@ -18,14 +18,18 @@ class Socket {
         struct sockaddr_in svr_addr;
         
     public:
+        Socket();
         Socket(int port);
         virtual ~Socket();
         
         int Bind();
+        int Bind(int);
         int Listen(int);
         t_socket Accept();
-        int Read(DataPacket*);
-        int Send(DataPacket*);
+        int Connect(std::string, int);
+        int Read(t_byte*, t_size);
+        int Send(t_byte*, t_size);
+        int Response(t_byte*, t_size);
         void Close();
         int getPort();
         int setPort(int);

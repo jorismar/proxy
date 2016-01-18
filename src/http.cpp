@@ -45,10 +45,17 @@ void Http::setServerName(std::string name) {
     this->server_name = name;
 }
 
-void Http::process(t_byte * header) {
+void Http::processRequest(t_byte * header) {
     std::string msg(header);
     
-    this->reqst_file = this->getfield(msg, "GET ", ' ');
+    if(msg.find("GET") != std::string::npos) {
+        this->is_get_reqst = true;
+        this->reqst_file = this->getfield(msg, "GET ", ' ');
+        this->reqsttype = Http::Type::GET;
+    } else if(msg.find("POST") != std::string::npos) {
+        this->reqst_file = this->getfield(msg, "POST ", ' ');
+        this->reqsttype = Http::Type::POST;
+    }
 //  this->httpver    = this->getfield(msg, "HTTP/", '\n');
 //  this->host       = this->getfield(msg, "Host: ", '\n');
 //  this->user_agent = this->getfield(msg, "User-Agent: ", '\n');
@@ -68,7 +75,7 @@ void Http::process(t_byte * header) {
 
         aux = this->getfield(msg, "Range: bytes=", '-');
         
-        if(aux.compare("") != 0) {
+        if(aux.length() > 0) {
             try {
                 try {
                     this->range[0] = std::stoi(aux, &sz);
@@ -86,18 +93,20 @@ void Http::process(t_byte * header) {
     }
 }
 
-std::string Http::generate(t_size filelen, std::string filetype, std::string last_modif_date) {
-    std::string length = std::to_string(filelen > 0 ? filelen : 70);
+std::string Http::genResponse(t_size filelen, std::string filetype, std::string last_modif_date) {
+    std::string length = std::to_string(filelen > 0 ? filelen : 0);
     std::string msg    = "";
     std::string resp;
     std::string etag   = "\"\"";
     std::string time   = this->getDate();
+    std::string aux    = "";
     
     if(filelen == 0) {
         resp = RPLY_NOT_FOUND;
+        aux = "<center><br><br><font size=\"8\">404</font><br><font size=\"6\">PAGE NOT FOUND</font></center>";
         msg = msg + "x-content-type-options: nosniff\r\n";
         msg = msg + "Content-Type: text/html; charset=UTF-8\r\n";
-        msg = msg + "Content-Length: " + length  + "\r\n";
+        msg = msg + "Content-Length: " + std::to_string(aux.length())  + "\r\n";
     } else {
         msg = msg + "Accept-Ranges: bytes"             + "\r\n";
         msg = msg + "Cache-Control: public, max-age=0" + "\r\n";
@@ -135,7 +144,28 @@ std::string Http::generate(t_size filelen, std::string filetype, std::string las
     msg = msg + "Date: "           + time                + "\r\n";
     msg = msg + "X-Powered-By: "   + this->server_name   + "\r\n\r\n";
     
-    return "HTTP/1.1 " + resp + "\r\n" + msg;
+    return "HTTP/1.1 " + resp + "\r\n" + msg + aux;
+}
+
+std::string Http::genRequest(std::string filename, t_size filesize, std::string accept_type, std::string host, short headtype) {
+    std::string msg;
+    
+    if(headtype == Http::Type::GET) {
+        // NOT IMPLEMENTED YET
+    } else if(headtype == Http::Type::POST) {
+        msg = "POST /" + filename + " HTTP/1.1\r\n";
+        msg = msg + "Host: " + host + "\r\n";
+        msg = msg + "Connection: keep-alive\r\n";
+        msg = msg + "Content-Length: " + std::to_string(filesize) + "\r\n";
+    //  msg = msg + "User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.111 Safari/537.36\r\n";
+        msg = msg + "Cache-Control: no-cache\r\n";
+        msg = msg + "Accept: " + accept_type + "\r\n";
+        msg = msg + "DNT: 1\r\n";
+        msg = msg + "Accept-Encoding: gzip, deflate\r\n";
+        msg = msg + "Accept-Language: pt-BR,pt;q=0.8,en-US;q=0.6,en;q=0.4\r\n";
+    }
+
+    return msg + "\r\n";
 }
 
 std::string Http::getfield(std::string src, std::string mark, char sep) {
@@ -150,6 +180,7 @@ std::string Http::getfield(std::string src, std::string mark, char sep) {
 void Http::clear() {
     this->range[0]          = 0;
     this->range[1]          = 0;
+    this->is_get_reqst      = false;
     this->reqst_file        = "";
     this->httpver           = "";
     this->accpt             = "";

@@ -74,6 +74,8 @@
 #define CLOSE       "close"
 #define KEEP_ALIVE  "keep-alive"
 
+//#define GET 0
+
 #include <string>
 #include <cstring>
 #include <cstdlib>
@@ -85,6 +87,7 @@
 class Http {
     private:
         int range[2];
+        bool is_get_reqst;
         std::string reqst_file;
         std::string server_name;
         std::string httpver;
@@ -139,6 +142,8 @@ class Http {
         short reqsttype;
         
     public:
+        enum Type {GET = 0, POST = 1};
+        
         Http();
         virtual ~Http();
         
@@ -154,8 +159,9 @@ class Http {
         
         void setServerName(std::string);
         
-        void process(t_byte*);
-        std::string generate(t_size, std::string, std::string);
+        void processRequest(t_byte*);
+        std::string genResponse(t_size, std::string, std::string);
+        std::string genRequest(std::string, t_size, std::string, std::string, short);
         void clear();
         
         static std::string getDate() {
