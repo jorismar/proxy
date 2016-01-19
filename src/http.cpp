@@ -103,7 +103,7 @@ std::string Http::genResponse(t_size filelen, std::string filetype, std::string 
     
     if(filelen == 0) {
         resp = RPLY_NOT_FOUND;
-        aux = "<center><br><br><font size=\"8\">404</font><br><font size=\"6\">PAGE NOT FOUND</font></center>";
+        aux = "<center><br><br><font size=\"8\">404</font><br><font size=\"6\">NOT FOUND</font></center>";
         msg = msg + "x-content-type-options: nosniff\r\n";
         msg = msg + "Content-Type: text/html; charset=UTF-8\r\n";
         msg = msg + "Content-Length: " + std::to_string(aux.length())  + "\r\n";
@@ -156,6 +156,7 @@ std::string Http::genRequest(std::string filename, t_size filesize, std::string 
         msg = "POST /" + filename + " HTTP/1.1\r\n";
         msg = msg + "Host: " + host + "\r\n";
         msg = msg + "Connection: keep-alive\r\n";
+        msg = msg + "Content-Type: application/json\r\n";
         msg = msg + "Content-Length: " + std::to_string(filesize) + "\r\n";
     //  msg = msg + "User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.111 Safari/537.36\r\n";
         msg = msg + "Cache-Control: no-cache\r\n";

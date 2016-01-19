@@ -16,10 +16,10 @@
 int g_http_port;
 int g_udp_port;
 std::string g_path;
-std::string server_ip = "127.0.0.1";
+std::string server_ip = "150.165.205.84";
 int server_port = 8080;
-std::string arthron_ip = "";
-int arthron_port = 99999;
+std::string arthron_ip = "150.165.205.159";
+int arthron_port = 8080;
 
 Buffer * g_dashbuffer = new Buffer(100);
 
@@ -31,9 +31,9 @@ bool signIn(std::string ip, int port) {
 	
 	EXIT_IF(socket->Connect(ip, port) < 0, "");
 	
-	std::string json_msg = "{\n\"command\" : \"connect\",\n\"ip\" : \"" + server_ip + "\",\n\"port\" : \"" + std::to_string(server_port) + "\"\n}";
+	std::string json_msg = "{\n\"ip\" : \"" + server_ip + "\",\n\"port\" : \"" + std::to_string(server_port) + "\"\n}";
 	
-	request = header->genRequest("", (t_size) json_msg.length(), "*/*", ip + ":" + std::to_string(port), Http::Type::POST);
+	request = header->genRequest("ArthronRest/api/dash_sessions", (t_size) json_msg.length(), "*/*", ip + ":" + std::to_string(port), Http::Type::POST);
 	
 	buffer = (t_byte*) malloc(sizeof(t_byte) * (request.length() + json_msg.length()));
 	
@@ -41,6 +41,13 @@ bool signIn(std::string ip, int port) {
 	memcpy(buffer + request.length(), json_msg.c_str(), json_msg.length());
 	
 	EXIT_IF(socket->Send(buffer, request.length() + json_msg.length()) < 0, "");
+	
+	//memset(buffer, 0, request.length() + json_msg.length());
+	
+	//PRINT("Aguardando resposta...")
+	socket->Read(buffer, request.length() + json_msg.length());
+	
+	PRINT(buffer);
 	
 	socket->Close();
 	
