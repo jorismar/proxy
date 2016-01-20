@@ -7,8 +7,8 @@
 
 // Sucessful Responses
 #define RPLY_OK                     "200 OK"
-#define RPLY_CREATED                "201"
-#define RPLY_ACCEPTED               "202"
+#define RPLY_CREATED                "201 Created"
+#define RPLY_ACCEPTED               "202 Accepted"
 #define RPLY_NON_AUTHORIT_INFO      "203"
 #define RPLY_NO_CONTENT             "204"
 #define RPLY_RESET_CONTENT          "205"
@@ -31,7 +31,7 @@
 #define RPLY_FORBIDDEN              "403"
 #define RPLY_NOT_FOUND              "404 Not Found"
 #define RPLY_METHOD_NOT_ALLWED      "405"
-#define RPLY_NOT_ACCEPTABLE         "406"
+#define RPLY_NOT_ACCEPTABLE         "406 Not Acceptable"
 #define RPLY_PROXY_AUTHENT_REQD     "407"
 #define RPLY_REQUEST_TIMEOUT        "408"
 #define RPLY_CONFLICT               "409"
@@ -52,7 +52,7 @@
 
 // Server error responses
 #define RPLY_INTERNAL_SVR_ERROR     "500"
-#define RPLY_NOT_IMPLEMENTED        "501"
+#define RPLY_NOT_IMPLEMENTED        "501 Not Implemented"
 #define RPLY_BAD_GATEWAY            "502"
 #define RPLY_SERVIC_UNAVAILABLE     "503"
 #define RPLY_GATEWAY_TIMEOUT        "504"
@@ -60,15 +60,6 @@
 #define RPLY_VARNT_ALSO_NEGOT       "506"
 #define RPLY_VARNT_ALSO_NEGOTIATION "507"
 #define RPLY_NETWRK_AUTHENT_REQ     "511"
-
-//Content Type
-#define TYPE_TEXT   0   // html
-#define TYPE_IMAGE  1   // jpg, png, gif, etc.
-#define TYPE_MEDIA  2   // mp3, mp4, ogg, webm, m4s, etc.
-#define TYPE_VIDEO  3   // mp4, ogg, webm
-#define TYPE_AUDIO  4   // mp4, mp3
-//#define TYPE_APP    5
-#define TYPE_ANY    6   // */*
 
 // Connection
 #define CLOSE       "close"
@@ -140,9 +131,12 @@ class Http {
         std::string getfield(std::string, std::string, char);
         
         short reqsttype;
+        int reply_status;
         
     public:
-        enum Type {GET = 0, POST = 1};
+        enum Method {GET, POST};
+        enum ContentType {JSON}; // adicionar outros tipos
+        enum Status {OK = 200, CREATED = 201, ACCEPTED = 202, PARTIAL_CONTENT = 206, NOT_MODIFIED = 304, NOT_FOUND = 404, NOT_ACCEPTED = 406, NOT_IMPLEMENTED = 501};
         
         Http();
         virtual ~Http();
@@ -156,12 +150,16 @@ class Http {
         std::string get_user_agent();
         std::string get_accepted_types();
         std::string get_accepted_encoding();
+        int get_reply_status();
+        int get_content_type();
         
         void setServerName(std::string);
         
         void processRequest(t_byte*);
-        std::string genResponse(t_size, std::string, std::string);
-        std::string genRequest(std::string, t_size, std::string, std::string, short);
+        void processResponse(t_byte*);
+        std::string genResponse(int);
+        std::string genResponse(t_size, std::string, std::string, int);
+        std::string genRequest(std::string, t_size, short, std::string, std::string, short);
         void clear();
         
         static std::string getDate() {

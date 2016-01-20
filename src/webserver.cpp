@@ -24,8 +24,6 @@ void Webserver::start() {
     
     this->alive = true;
 
-    PRINT("Session running on port: " << this->socket->getPort());
-    
     while(alive) {
         client = this->socket->Accept();
         std::thread cl([=](){Webserver::startClient(client); return 1;});
@@ -43,52 +41,65 @@ void Webserver::stop() {
 
 void Webserver::startClient(t_socket cl) {
     VirtualFile * file;
-    Http * header = new Http();
     std::string hder;
-    t_size filesize = 0;
-    t_byte * packet = (t_byte*) malloc(sizeof(t_byte) * 1024);
+    t_size filesize;
+    t_byte * rcv_packet = (t_byte*) malloc(sizeof(t_byte) * 1024);
+    t_byte * snd_packet;
+    t_size headsize;
+    Http * header = new Http();
     
-    Socket::readFrom(cl, packet, 1024);
-    
-    //PRINT(packet)
-    
-    header->processRequest(packet);
+    //do {
+        if(Socket::readFrom(cl, rcv_packet, 1024, 30) < 0);
+           // break;
 
-    free(packet);
+        header->processRequest(rcv_packet);
+        
+        file = this->getFile(header->get_reqsted_file());
+        
+        if(file != NULL) {
+            filesize = file->size();
+            hder = header->genResponse(filesize, file->filetype(), file->filemodified_date(), Http::Status::OK);
+        } else {
+            filesize = 0;
+            hder = header->genResponse(0, "", "", Http::Status::NOT_FOUND);
+        }
+        
+        headsize = hder.length();
+        
+        snd_packet = (t_byte*) malloc(sizeof(t_byte) * (headsize + filesize));
+        
+        memcpy(snd_packet, hder.c_str(), headsize);
+        
+        if(file != NULL)
+            memcpy(snd_packet + headsize, file->binary() + header->get_start_range_pos(), filesize - header->get_start_range_pos());
+        
+        if(Socket::sendTo(cl, snd_packet, headsize + filesize) < 0);
+           // break;
+        
+        header->clear();
+        free(snd_packet);
+        memset(rcv_packet, 0, 1024);
+    //} while(file != NULL); //while keep-alive
     
-    file = this->getFile(header->get_reqsted_file());
-    
-    if(file != NULL) {
-        hder = header->genResponse(file->size(), file->filetype(), file->filemodified_date());
-        filesize = file->size();
-    } else hder = header->genResponse(0, "", "");
-    
-    packet = (t_byte*) malloc(sizeof(t_byte) * (hder.length() + filesize));
-    
-    memcpy(packet, hder.c_str(), hder.length());
-    
-    if(file != NULL)
-        memcpy(packet + hder.length(), file->binary() + header->get_start_range_pos(), filesize - header->get_start_range_pos());
-    
-    Socket::sendTo(cl, packet, hder.length() + filesize);
-    
+    free(rcv_packet);
+        
     Socket::Close(cl);
 }
 
 VirtualFile * Webserver::getFile(std::string filename) {
     int i = 0;
-    std::string filetype = filename.substr(filename.rfind(".", filename.length() - 1) + 1, filename.length());
+    std::string filetype = filename.substr(filename.rfind(".", filename.length() - 1) + 1, filename.length() - 1);
     VirtualFile * file = NULL;
     
-    if(!filetype.compare("m4s")) {
-        file = this->readExternalBuffer(filename);
-    } else {
+    //if(!filetype.compare("m4s")) {
+        //file = this->readExternalBuffer(filename);
+    //} else {
         if(!filename.compare("/")) {
             filename = "/index.html";
             filetype = "html";
         }
         file = this->readFile(filename, filetype);
-    }
+    //}
     
     return file;
 }

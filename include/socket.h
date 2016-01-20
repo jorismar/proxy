@@ -16,6 +16,7 @@ class Socket {
         socklen_t cl_socket_len;
         
         struct sockaddr_in svr_addr;
+        int rcv_timeout;
         
     public:
         Socket();
@@ -30,24 +31,50 @@ class Socket {
         int Read(t_byte*, t_size);
         int Send(t_byte*, t_size);
         int Response(t_byte*, t_size);
+        int Receive(t_byte*, t_size, int);
         void Close();
         int getPort();
-        int setPort(int);
+        void setPort(int);
         
-        static int readFrom(t_socket orig, DataPacket * data) {
-            return read(orig, data->get(), data->size());
+        static int readFrom(t_socket socket, t_byte * data, t_size size, int timeout) {
+            int r;
+            struct timeval tv;
+            
+            if(timeout > 0) {
+                tv.tv_sec  = timeout;
+                tv.tv_usec = 0;
+            
+                setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+            }
+            
+            r = recv(socket, data, size, 0);
+            
+            if(r < 0)
+                perror("ERROR on receive");
+        
+            return r;
         }
         
         static int readFrom(t_socket orig, t_byte * data, t_size size) {
-            return read(orig, data, size);
-        }
+            int r;
         
-        static int sendTo(t_socket dest, DataPacket * data) {
-            return send(dest, data->get(), data->size(), 0);
+            r = read(orig, data, size);
+        
+            if(r < 0)
+                perror("ERROR on receive");
+
+            return r;
         }
         
         static int sendTo(t_socket dest, t_byte * data, t_size size) {
-            return send(dest, data, size, 0);
+            int r;
+        
+            r = send(dest, data, size, 0);
+        
+            if(r < 0)
+                perror("ERROR on send");
+
+            return r;
         }
         
         static void Close(t_socket socket) {

@@ -1,7 +1,7 @@
 #include "http.h"
 
 Http::Http() {
-    this->clear();
+    //this->clear();
     this->server_name       = "Lavid/Jorismar";
 }
 
@@ -41,20 +41,52 @@ std::string Http::get_accepted_encoding() {
     return this->accpt_encoding;
 }
 
+int Http::get_reply_status() {
+    return reply_status;
+}
+
+int Http::get_content_type() {
+    if(this->content_type.find("application/json")  != std::string::npos)
+        return Http::ContentType::JSON;
+    else return -1;
+}
+
 void Http::setServerName(std::string name) {
     this->server_name = name;
+}
+
+std::string Http::getfield(std::string src, std::string mark, char sep) {
+    int src_size = src.length();
+    std::string value = "";
+    
+    for(int pos = src.find(mark) + mark.length(); pos < src_size && pos != std::string::npos && src.at(pos) != sep; pos++)
+        value += src.at(pos);
+
+    return value;    
+}
+
+void Http::processResponse(t_byte * header) {
+    std::string msg(header);
+    
+    try {
+        try {
+            this->reply_status = std::stoi(this->getfield(msg, " ", ' '), NULL);
+        } catch(const std::invalid_argument& ex) {}
+    } catch (const std::out_of_range& ex) {}
 }
 
 void Http::processRequest(t_byte * header) {
     std::string msg(header);
     
     if(msg.find("GET") != std::string::npos) {
-        this->is_get_reqst = true;
-        this->reqst_file = this->getfield(msg, "GET ", ' ');
-        this->reqsttype = Http::Type::GET;
+        this->is_get_reqst  = true;
+        this->reqst_file    = this->getfield(msg, "GET ", ' ');
+        this->reqsttype     = Http::Method::GET;
     } else if(msg.find("POST") != std::string::npos) {
-        this->reqst_file = this->getfield(msg, "POST ", ' ');
-        this->reqsttype = Http::Type::POST;
+        this->reqst_file    = this->getfield(msg, "POST ", ' ');
+        this->reqsttype     = Http::Method::POST;
+        this->content_type  = this->getfield(msg, "Content-Type: ", '\r'); // verificar se \r é encontrado
+        this->accpt         = this->getfield(msg, "Accept: ", '\n');
     }
 //  this->httpver    = this->getfield(msg, "HTTP/", '\n');
 //  this->host       = this->getfield(msg, "Host: ", '\n');
@@ -93,89 +125,103 @@ void Http::processRequest(t_byte * header) {
     }
 }
 
-std::string Http::genResponse(t_size filelen, std::string filetype, std::string last_modif_date) {
-    std::string length = std::to_string(filelen > 0 ? filelen : 0);
-    std::string msg    = "";
+std::string Http::genResponse(t_size filelen, std::string filetype, std::string last_modif_date, int status) {
+    std::string length  = std::to_string(filelen > 0 ? filelen : 0);
+    std::string msg     = "";
     std::string resp;
-    std::string etag   = "\"\"";
-    std::string time   = this->getDate();
-    std::string aux    = "";
+    std::string etag    = "\"\"";
+    std::string type    = "";
+    std::string aux     = "";
+    std::string connection;
     
-    if(filelen == 0) {
-        resp = RPLY_NOT_FOUND;
-        aux = "<center><br><br><font size=\"8\">404</font><br><font size=\"6\">NOT FOUND</font></center>";
-        msg = msg + "x-content-type-options: nosniff\r\n";
-        msg = msg + "Content-Type: text/html; charset=UTF-8\r\n";
-        msg = msg + "Content-Length: " + std::to_string(aux.length())  + "\r\n";
-    } else {
-        msg = msg + "Accept-Ranges: bytes"             + "\r\n";
-        msg = msg + "Cache-Control: public, max-age=0" + "\r\n";
+    if(status < Http::Status::NOT_IMPLEMENTED) {
+        if(status == Http::Status::NOT_MODIFIED) {
+            resp = RPLY_NOT_MODIFIED;
+            connection = "keep-alive";
+        } else {
+            if(status >= 200 && status < 300) {
+                if(status == Http::Status::OK) {
+                    resp = RPLY_OK;
+                    
+                } else if(status == Http::Status::PARTIAL_CONTENT) {
+                    resp = RPLY_PARTIAL_CONTENT;
+                } else if(status == Http::Status::ACCEPTED) {
+                    resp = RPLY_ACCEPTED;
+                } else if(status == Http::Status::CREATED) {
+                    resp = RPLY_CREATED;
+                }
+                
+                if(this->range[0] >= 0)
+                    resp = RPLY_PARTIAL_CONTENT;
+                else this->range[0] = 0;
 
-        if(this->if_modifd_since.compare(last_modif_date) != 0 || this->if_none_match.compare(etag) != 0) {
-            resp = RPLY_OK;
-    
-            if(this->range[0] >= 0)
-                resp = RPLY_PARTIAL_CONTENT;
-            else this->range[0] = 0;
-            
-            msg = msg + "Content-Range: bytes " + std::to_string(this->range[0]) + "-" + std::to_string(filelen - 1) + "/" + length + "\r\n";
+                msg = msg + "Content-Range: bytes " + std::to_string(this->range[0]) + "-" + std::to_string(filelen - 1) + "/" + length + "\r\n";
+                msg = msg + "Accept-Ranges: bytes\r\n";
+                msg = msg + "Cache-Control: public, max-age=0\r\n";
+                connection = "keep-alive";
 
-            std::string type = "";
+                type =  !filetype.compare("mpd") || !filetype.compare("m4s") ? "application/octet-stream" :
+                            !filetype.compare("json") ? "application/json; charset=UTF-8" :
+                                "";
+                                //!filetype.compare("html") || !filetype.compare("htm") ? type + "text/html; charset=UTF-8" :
+                                    //!filetype.compare("jpg") || !filetype.compare("png") || !filetype.compare("gif") ? type + "image/" + filetype :
+                                        //!filetype.compare("mp4") || !filetype.compare("webm") || !filetype.compare("ogg") ? type + "video/" + filetype :
+                                            //!filetype.compare("mp3") || !filetype.compare("acc") ? type + "audio/" + filetype :
+                                                //!filetype.compare("js") ? "application/javascript" :
+                                                    //!filetype.compare("ico") ? "image/x-icon" : "";
+                                                        //!filetype.compare("ico") ? "image/vnd.microsoft.icon" :
+            } else if(status == Http::Status::NOT_FOUND) {
+                resp = RPLY_NOT_FOUND;
+                aux = "<center><br><br><font size=\"8\">404</font><br><font size=\"6\">NOT FOUND</font></center>";
+                msg = msg + "x-content-type-options: nosniff\r\n";
+                type = "text/html; charset=UTF-8";
+                length = std::to_string(aux.length());
+                connection = "close";
+            } else if(status == Http::Status::NOT_ACCEPTED) {
+                resp = RPLY_NOT_ACCEPTABLE;
+                msg = msg + "Cache-Control: no-cache, no-store, max-age=0\r\n";
+                connection = "close";
+                type = "application/json; charset=UTF-8";
+            }
             
-            type =  !filetype.compare("html") || !filetype.compare("htm") ? type + "text/html; charset=UTF-8" :
-                        !filetype.compare("jpg") || !filetype.compare("png") || !filetype.compare("gif") ? type + "image/" + filetype :
-                            !filetype.compare("mp4") || !filetype.compare("webm") || !filetype.compare("ogg") ? type + "video/" + filetype :
-                                !filetype.compare("mp3") || !filetype.compare("acc") ? type + "audio/" + filetype :
-                                    !filetype.compare("js") ? "application/javascript" :
-                                        !filetype.compare("mpd") || !filetype.compare("m4s") ? "application/octet-stream" :
-                                            !filetype.compare("json") ? "application/json" :
-                                                !filetype.compare("ico") ? "image/x-icon" : "";
-                                            //!filetype.compare("ico") ? "image/vnd.microsoft.icon" :
-        
             msg = msg + "Content-Type: "   + type            + "\r\n";
             msg = msg + "Content-Length: " + length          + "\r\n";
-        } else resp = RPLY_NOT_MODIFIED;
-
+        }
+    
         msg = msg + "Etag: "           + etag            + "\r\n";
         msg = msg + "Last-Modified: "  + last_modif_date + "\r\n";
+        msg = msg + "Connection: " + connection + "\r\n";
+    } else {
+        resp = RPLY_NOT_IMPLEMENTED;
     }
     
-    msg = msg + "Connection: keep-alive"                 + "\r\n";
-    msg = msg + "Date: "           + time                + "\r\n";
-    msg = msg + "X-Powered-By: "   + this->server_name   + "\r\n\r\n";
+    msg = msg + "Date: "           + this->getDate()     + "\r\n";
+    msg = msg + "X-Powered-By: "   + this->server_name   + "\r\n";
     
-    return "HTTP/1.1 " + resp + "\r\n" + msg + aux;
+    return "HTTP/1.1 " + resp + "\r\n" + msg + "\r\n" + aux;
 }
 
-std::string Http::genRequest(std::string filename, t_size filesize, std::string accept_type, std::string host, short headtype) {
+std::string Http::genRequest(std::string filename, t_size filesize, short content_type, std::string accept_type, std::string host, short headtype) {
     std::string msg;
+    std::string content = content_type == Http::ContentType::JSON ? "application/json" : "text/html; charset=UTF-8";
     
-    if(headtype == Http::Type::GET) {
+    if(headtype == Http::Method::GET) {
         // NOT IMPLEMENTED YET
-    } else if(headtype == Http::Type::POST) {
+    } else if(headtype == Http::Method::POST) {
         msg = "POST /" + filename + " HTTP/1.1\r\n";
         msg = msg + "Host: " + host + "\r\n";
         msg = msg + "Connection: keep-alive\r\n";
-        msg = msg + "Content-Type: application/json\r\n";
+        msg = msg + "Content-Type: " + content + "\r\n";
         msg = msg + "Content-Length: " + std::to_string(filesize) + "\r\n";
     //  msg = msg + "User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.111 Safari/537.36\r\n";
         msg = msg + "Cache-Control: no-cache\r\n";
         msg = msg + "Accept: " + accept_type + "\r\n";
-        msg = msg + "DNT: 1\r\n";
-        msg = msg + "Accept-Encoding: gzip, deflate\r\n";
-        msg = msg + "Accept-Language: pt-BR,pt;q=0.8,en-US;q=0.6,en;q=0.4\r\n";
+    //  msg = msg + "DNT: 1\r\n";
+    //  msg = msg + "Accept-Encoding: gzip, deflate\r\n";
+    //  msg = msg + "Accept-Language: pt-BR,pt;q=0.8,en-US;q=0.6,en;q=0.4\r\n";
     }
 
     return msg + "\r\n";
-}
-
-std::string Http::getfield(std::string src, std::string mark, char sep) {
-    std::string value = "";
-    
-    for(int pos = src.find(mark) + mark.length(); pos < src.length() && pos != std::string::npos && src.at(pos) != '\0' && src.at(pos) != sep; pos++)
-        value += src.at(pos);
-
-    return value;    
 }
 
 void Http::clear() {
@@ -229,4 +275,7 @@ void Http::clear() {
     this->x_reqstd_with     = "";
     this->x_uidh            = "";
     this->x_wap_profile     = "";
+    
+    this->reqsttype = 0;
+    this->reply_status = 0;
 }

@@ -38,7 +38,8 @@ void readfl(std::string filename, std::string path, Buffer** buffer) {
 	for(int i = 1; i < (*buffer)->size(); i++) {
 		pfile = fopen((path + filename + std::to_string(i) + ".m4s").c_str(), "rb");
 
-		EXIT_IF(pfile == NULL, "ERRO: Arquivo não encontrado!" << std::endl << (path + filename + std::to_string(i) + ".m4s"));
+		if(pfile == NULL)
+            break;
 		
 		fseek(pfile, 0, SEEK_END);
 		fsize = ftell(pfile);
@@ -50,7 +51,8 @@ void readfl(std::string filename, std::string path, Buffer** buffer) {
 		
 		vfile = new VirtualFile(filename + std::to_string(i) + ".m4s", "m4s", Http::getDate(), bin, count);
 		
-		EXIT_IF((*buffer)->add(vfile), "ERRO: Falha ao escrever no buffer")
+		if((*buffer)->add(vfile))
+            PRINT("ERRO: Falha ao escrever no buffer")
 		
 		fclose(pfile);
 	}
@@ -61,12 +63,15 @@ void readfl(std::string filename, std::string path, Buffer** buffer) {
 
 void Session::start() {
 /******************* DASHCAST *******************/
-	std::thread vid([=](){readfl("video", this->path + "/fragments/", &this->video_dash_buffer); return 1;});
-	std::thread aud([=](){readfl("audio", this->path + "/fragments/", &this->audio_dash_buffer); return 1;});
+	//std::thread vid([=](){readfl("video", this->path + "/fragments/", &this->video_dash_buffer); return 1;});
+	//std::thread aud([=](){readfl("audio", this->path + "/fragments/", &this->audio_dash_buffer); return 1;});
     
-    vid.detach();
-    aud.detach();
+    //vid.detach();
+    //aud.detach();
 /************************************************/
+
+    PRINT("Session running on UDP:" << this->udp_port << "/HTTP:" << this->http_port);
+
 	std::thread websvr([=](){this->webserver->start(); return 1;});
 
     websvr.join();

@@ -77,7 +77,7 @@ int Socket::Connect(std::string ip, int port) {
 }
 
 int Socket::Read(t_byte * data, t_size length) {
-    return read(this->cl_socket, data, length);
+    return read(this->svr_socket, data, length);
 }
 
 int Socket::Send(t_byte * data, t_size length) {
@@ -86,6 +86,23 @@ int Socket::Send(t_byte * data, t_size length) {
 
 int Socket::Response(t_byte * data, t_size length) {
     return send(this->cl_socket, data, length, 0);
+}
+
+int Socket::Receive(t_byte * data, t_size length, int timeout) {
+    int r;
+    struct timeval tv;
+    
+    tv.tv_sec  = timeout;
+    tv.tv_usec = 0;
+    
+    setsockopt(this->svr_socket, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+    
+    r = recv(this->svr_socket, data, length, 0);
+    
+    if(r < 0)
+        perror("ERROR on receive");
+
+    return r;
 }
 
 void Socket::Close() {
@@ -97,6 +114,6 @@ int Socket::getPort() {
     return this->port;
 }
 
-int Socket::setPort(int port) {
+void Socket::setPort(int port) {
     this->port = port;
 }
