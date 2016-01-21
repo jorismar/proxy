@@ -177,8 +177,8 @@ std::string Http::genResponse(t_size filelen, std::string filetype, std::string 
                 type = "text/html; charset=UTF-8";
                 length = std::to_string(aux.length());
                 connection = "close";
-            } else if(status == Http::Status::NOT_ACCEPTED) {
-                resp = RPLY_NOT_ACCEPTABLE;
+            } else if(status == Http::Status::NOT_ACCEPTED || status == Http::Status::BAD_REQUEST) {
+                resp = status == Http::Status::NOT_ACCEPTED ? RPLY_NOT_ACCEPTABLE : RPLY_BAD_REQUEST;
                 msg = msg + "Cache-Control: no-cache, no-store, max-age=0\r\n";
                 connection = "close";
                 type = "application/json; charset=UTF-8";

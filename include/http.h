@@ -25,7 +25,7 @@
 #define RPLY_PERMAN_REDIRECT        "308"
 
 // Client error responses
-#define RPLY_BAD_REQUEST            "400"
+#define RPLY_BAD_REQUEST            "400 Bad Request"
 #define RPLY_UNAUTHORIZED           "401"
 #define RPLY_PAYMENT_REQUIRED       "402"
 #define RPLY_FORBIDDEN              "403"
@@ -136,7 +136,7 @@ class Http {
     public:
         enum Method {GET, POST};
         enum ContentType {JSON}; // adicionar outros tipos
-        enum Status {OK = 200, CREATED = 201, ACCEPTED = 202, PARTIAL_CONTENT = 206, NOT_MODIFIED = 304, NOT_FOUND = 404, NOT_ACCEPTED = 406, NOT_IMPLEMENTED = 501};
+        enum Status {OK = 200, CREATED = 201, ACCEPTED = 202, PARTIAL_CONTENT = 206, NOT_MODIFIED = 304, BAD_REQUEST = 400, NOT_FOUND = 404, NOT_ACCEPTED = 406, NOT_IMPLEMENTED = 501};
         
         Http();
         virtual ~Http();

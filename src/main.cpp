@@ -18,8 +18,8 @@ int g_server_port = 8080;
 
 
 std::string g_init_path = "ArthronRest/api/dash_sessions";
-std::string g_init_ip = "127.0.0.1";
-int g_init_port = 3000;
+std::string g_init_ip = "150.165.205.159";
+int g_init_port = 8080;
 
 Buffer * g_dashbuffer = new Buffer(100);
 Socket * server = new Socket(g_server_port++);
@@ -60,7 +60,7 @@ void signIn(std::string ip, int port) {
 	memset(buffer, 0, size);
 	free(buffer);
 
-	//EXIT_IF(header->get_reply_status() != Http::Status::CREATED, "Error: The server responded with status code " << header->get_reply_status() << ".");
+	EXIT_IF(header->get_reply_status() != Http::Status::CREATED, "Error: The server responded with status code " << header->get_reply_status() << ".");
 	
 	socket->Close();
 }
@@ -69,12 +69,16 @@ std::string getValue(std::string field, std::string src, std::string assign_oper
 	std::string ret = "";
 	int i, pos;
 	
-	pos = src.find("\"" + field + "\"") + field.length() + 2;
-	pos = src.find(assign_operator, pos) + assign_operator.length();
-	pos = src.find("\"", pos) + 1;
+	pos = src.find("\"" + field + "\"");
+	
+	if(pos != std::string::npos)
+		pos = src.find(assign_operator, pos + field.length() + 2);
+	
+	if(pos != std::string::npos)
+		pos = src.find("\"", pos + assign_operator.length());
 	
 	if(pos != std::string::npos) {
-		for(i = pos; i < src.length() && src.at(i) != '\"'; i++) {
+		for(i = pos + 1; i < src.length() && src.at(i) != '\"'; i++) {
 			ret += src.at(i);
 
 			if(src.at(i) == ',' && src.at(i) == '\n' && src.at(i) == '}') {
@@ -146,7 +150,7 @@ void start() {
 						std::thread session([=](){sessions.back()->start(); return 1;});
 						session.detach();
 						
-						json_msg = "{\n\"response\" : \"ok\",\n\"ip\" : \"" + g_server_ip + "\",\n\"udp\" : \"" + std::to_string(sessions.back()->getUdpPort()) + "\",\n\"http\" : \"" + std::to_string(sessions.back()->getHttpPort()) + "\"\n}";
+						json_msg = "{\n\"ip\":\"" + g_server_ip + "\",\n\"udp\":\"" + std::to_string(sessions.back()->getUdpPort()) + "\",\n\"http\":\"" + std::to_string(sessions.back()->getHttpPort()) + "\"\n}";
 					} else if(aux.find("close") != std::string::npos) {
 						PRINT("Command received: Close session: " << id);
 						
@@ -159,21 +163,21 @@ void start() {
 							//sessions.at(i)->~Session();
 							sessions.erase(sessions.begin() + i);
 							
-							json_msg = "{\n\"response\" : \"ok\"\n}";
+							json_msg = "";
 						} else {
 							PRINT("Error: session id not found.");
-							json_msg = "{\n\"response\" : \"error\"\n}";
+							json_msg = "";
 						}
 					} else accept = false;
 				} else accept = false;
 			} else accept = false;
 			
 			if(accept) {
-				resp_header = header->genResponse(json_msg.length(), "json", "", Http::Status::ACCEPTED);
+				resp_header = header->genResponse(json_msg.length(), "json", "", Http::Status::OK);
 			} else {
 				PRINT("Command received: Invalid");
-				json_msg = "{\n\"response\" : \"error\"\n}";
-				resp_header = header->genResponse(json_msg.length(), "json", "", Http::Status::NOT_ACCEPTED);
+				json_msg = "";
+				resp_header = header->genResponse(json_msg.length(), "json", "", Http::Status::BAD_REQUEST);
 			}
 		} else resp_header = header->genResponse(0, "", "", Http::Status::NOT_FOUND);
 
