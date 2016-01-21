@@ -117,6 +117,8 @@ void start() {
 
 		Socket::readFrom(client, rcv_packet, 1024);
 		
+		PRINT(rcv_packet)
+		
 		header->processRequest(rcv_packet);
 		
 		//filename = header->get_reqsted_file();

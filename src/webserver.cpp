@@ -15,8 +15,18 @@ Webserver::~Webserver() {
 }
 
 bool Webserver::openConnection() {
+    bool r = true;
+    
     this->socket = new Socket(this->port);
-    return this->socket->Bind() >= 0 && this->socket->Listen(10) >= 0;
+    if(this->socket->Bind() < 0) {
+        r = false;
+        PRINT("ERROR: Webserver bind error");
+    }else if(this->socket->Listen(10) < 0) {
+        r = false;
+        PRINT("ERROR: Webserver listen error");
+    }
+    
+    return r;
 }
 
 void Webserver::start() {
