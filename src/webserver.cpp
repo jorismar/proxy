@@ -155,8 +155,8 @@ VirtualFile * Webserver::readExternalBuffer(std::string filename) {
     return file;
 }
 
-void Webserver::setPort(int port) {
-    this->port = port;
+void Webserver::setPort(int svr_port) {
+    this->port = svr_port;
 }
 
 //MP4Box -dash 4000 -rap -segment-name -profile live -out video.mpd video.mp4#video video.mp4#audio

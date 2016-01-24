@@ -1,8 +1,10 @@
 #include "session.h"
 
-Session::Session(std::string id, int udp_port, t_size buffer_size, int http_port, std::string path) {
+Session::Session(std::string id, int udp_port, t_size buffer_size, int http_port, std::string site_path, int dash_profile std::string dash_path) {
     this->id = id;
-    this->path = path;
+    this->path = site_path;
+    this->dashprofile = dash_profile;
+    this->dashpath = dash_path;
     this->udp_port = udp_port;
     this->http_port = http_port;
     this->video_dash_buffer = new Buffer(buffer_size);
@@ -87,10 +89,12 @@ std::string Session::getID() {
 }
 
 void Session::setUdpPort(int port) {
+    this->udp_port = port;
 //  this->dashserver->setPort(port);
 }
 
 void Session::setHttpPort(int port) {
+    this->http_port = port;
     this->webserver->setPort(port);
 }
 

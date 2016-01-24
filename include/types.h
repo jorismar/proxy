@@ -4,7 +4,7 @@
 
 #define EXIT_IF(cond, msg) \
     if ((cond)) { \
-        std::cout << msg << std::endl; \
+        std::cout << msg << std::endl << "Close!"; \
         exit(1); \
     }
 

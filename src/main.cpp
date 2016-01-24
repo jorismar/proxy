@@ -13,39 +13,151 @@
 #define BUFFER_SIZE 1000
 #define UDP_PORT 1234
 
-std::string g_server_ip = "150.165.205.84";
-int g_server_port = 8080;
+std::string g_server_ip 		= "127.0.0.1";
+int 		g_server_port 		= 8090;
+int 		g_initial_tcp_port 	= g_server_port + 1;
+int 		g_initial_udp_port 	= 1234;
+std::string g_site_path 		= "./site";
+int 		g_dash_profile 		= 1; 				// 0 = live, 1 = on demand
+std::string g_dash_path 		= "./dash";
+std::string g_controller_ip 	= "127.0.0.1";
+int 		g_controller_port 	= 8080;
+std::string g_controller_url_path = "ArthronRest/api/dash_sessions";
 
+int main(int argc, char *argv[]) {
+	 std::string::size_type sz;
+	
+	for(int i = 1; i < argc; i++) {
+		std::string arg(argv[i]); 
+		
+		if(!arg.compare("-ip")) {
+			g_server_ip = argv[++i];
+		} else if(!arg.compare("-port")) {
+			arg = argv[++i];
 
-std::string g_init_path = "ArthronRest/api/dash_sessions";
-std::string g_init_ip = "150.165.205.159";
-int g_init_port = 8080;
+			try {
+				try {
+					g_server_port = std::stoi(arg, &sz);
+				} catch(const std::invalid_argument& ex) {
+					std::cout << "Invalid port entry." << std::endl;
+				}
+			} catch (const std::out_of_range& ex) {
+				std::cout << "Invalid port entry." << std::endl;
+			}
+		} else if(!arg.compare("-initial-tcp-port")) {
+			arg = argv[++i];
 
-Buffer * g_dashbuffer = new Buffer(100);
-Socket * server = new Socket(g_server_port++);
+			try {
+				try {
+					g_initial_tcp_port = std::stoi(arg, &sz);
+				} catch(const std::invalid_argument& ex) {
+					std::cout << "Invalid initial tcp port entry." << std::endl;
+				}
+			} catch (const std::out_of_range& ex) {
+				std::cout << "Invalid initial tcp port entry." << std::endl;
+			}
+		} else if(!arg.compare("-initial-udp-port")) {
+			arg = argv[++i];
 
-void signIn(std::string ip, int port) {
-	Http * header = new Http();
+			try {
+				try {
+					g_initial_udp_port = std::stoi(arg, &sz);
+				} catch(const std::invalid_argument& ex) {
+					std::cout << "Invalid initial udp port entry." << std::endl;
+				}
+			} catch (const std::out_of_range& ex) {
+				std::cout << "Invalid initial udp port entry." << std::endl;
+			}
+		} else if(!arg.compare("-site-path")) {
+			g_site_path = argv[++i];
+		} else if(!arg.compare("-dash-profile")) {
+			arg = argv[++i];
+			
+			if(!arg.compare("live")) {
+				g_dash_profile = 0;
+				g_dash_path = "";
+			}else if(!arg.compare("on-demand")) g_dash_profile = 1;
+					else std::cout << "Invalid dash profile" << std::endl;
+		} else if(!arg.compare("-dash-path")) {
+			g_dash_path = argv[++i];
+		} else if(!arg.compare("-controller-ip")) {
+			g_controller_ip = argv[++i];
+		} else if(!arg.compare("-controller-port")) {
+			arg = argv[++i];
+
+			try {
+				try {
+					g_controller_port = std::stoi(arg, &sz);
+				} catch(const std::invalid_argument& ex) {
+					std::cout << "Invalid port entry." << std::endl;
+				}
+			} catch (const std::out_of_range& ex) {
+				std::cout << "Invalid port entry." << std::endl;
+			}
+		} else if(!arg.compare("-controller-url-path")) {
+			g_controller_url_path = argv[++i];
+		} else if(!arg.compare("-h") || !arg.compare("--help")) {
+			arg = argv[0];
+			
+			std::string str("Usage: " + arg + " [config options]");
+			
+			str += "-ip <ip>\t IP of dashproxy server";
+			str += "-port <port>\t TCP port of proxy server used to connect with controller server";
+			str += "-initial-tcp-port <port>\t Select the initial port used to create new sessions";
+			str += "-initial-udp-port <port>\t Select the initial port used to create new sessions";
+			str += "-site-path <directory>\t Location of directory of the site files";
+			str += "-dash-profile <live / on-demand>\t Selects the profile dash to be used";
+			str += "-dash-path <directory>\t location of directory of the dash files (fragments, initializations and mpd) used in on-demand profile";
+			str += "-controller-ip <ip>\t";
+			str += "-controller-port <port>\t";
+			str += "-controller-url-path <url-path>\t The path of the controller used to recongnize the server mensage";
+			
+			std::cout << str << std::endl;
+		} else {
+			std::cout << "Invalid Parameter: " << argv[i] << std::endl;
+			return 1;
+		}
+	}
+
+	std::cout << std::endl << "Starting with arguments:" << std::endl << std::endl;
+
+	std::cout << "Server IP: " << g_server_ip << std::endl;
+	std::cout << "Server Port: " << g_server_port << std::endl;
+	std::cout << "Initial HTTP Session Port: " << g_initial_tcp_port << std::endl;
+	std::cout << "Initial UDP Session Port: " << g_initial_udp_port << std::endl;
+	std::cout << "Site Directory: \"" << g_site_path << "\"" << std::endl;
+	std::cout << "Dash Profile: " << (g_dash_profile == 0 ? "live" : g_dash_profile == 1 ? "on-demand" : "Invalid") << std::endl;
+	std::cout << "Dash Directory: \"" << g_dash_path << "\"" << std::endl;
+	std::cout << "Controller Server IP: " << g_controller_ip << std::endl;
+	std::cout << "Controller Server Port: " << g_controller_port << std::endl;
+	std::cout << "Controller URL Path: \"" << g_controller_url_path << "\"" << std::endl << std::endl;
+	
+	registerOnController();
+	
+    return 0;
+}
+
+void registerOnController() {
+	Http * protocol = new Http();
 	Socket * socket = new Socket();
-	t_byte * buffer;
-	std::string request;
-	int size;
 	
 	EXIT_IF(socket->Connect(ip, port) < 0, "");
 	
-	while(server->Bind() < 0 || server->Listen(10) < 0)
-		server->setPort(g_server_port++);
+	while(server->Bind() < 0 || server->Listen(1000) < 0) {
+		server->setPort(++g_server_port);
+		PRINT("Server port changed to " << g_server_port);
+	}
 	
-	std::string json_msg = "{\n\t\"session_id\" : \"init\",\n\t\"ip\" : \"" + g_server_ip + "\",\n\t\"port\" : \"" + std::to_string(g_server_port - 1) + "\"\n}";
+	std::string json = "{\"session_id\" : \"init\", \"ip\" : \"" + g_server_ip + "\", \"port\" : \"" + std::to_string(g_server_port) + "\"}";
 	
-	request = header->genRequest(g_init_path, (t_size) json_msg.length(), Http::ContentType::JSON, "*/*", ip + ":" + std::to_string(port), Http::Method::POST);
+	std::string header = protocol->genRequest(g_controller_url_path, (t_size) json.length(), Http::ContentType::JSON, "*/*", ip + ":" + std::to_string(port), Http::Method::POST);
 	
-	size = request.length() + json_msg.length();
+	int size = header.length() + json.length();
 	
-	buffer = (t_byte*) malloc(sizeof(t_byte) * size);
+	t_byte * buffer = (t_byte*) malloc(sizeof(t_byte) * size);
 	
-	memcpy(buffer, request.c_str(), request.length());
-	memcpy(buffer + request.length(), json_msg.c_str(), json_msg.length());
+	memcpy(buffer, header.c_str(), header.length());
+	memcpy(buffer + header.length(), json.c_str(), json.length());
 	
 	EXIT_IF(socket->Send(buffer, size) < 0, "");
 
@@ -53,16 +165,121 @@ void signIn(std::string ip, int port) {
 
 	EXIT_IF(socket->Receive(buffer, size, 30) < 0, "");
 	
-	header->clear();
+	protocol->clear();
 
-	header->processResponse(buffer);
+	protocol->processResponse(buffer);
 	
 	memset(buffer, 0, size);
 	free(buffer);
 
-	EXIT_IF(header->get_reply_status() != Http::Status::CREATED, "Error: The server responded with status code " << header->get_reply_status() << ".");
+	EXIT_IF(protocol->get_reply_status() != Http::Status::CREATED, "Error: The server responded with status code " << protocol->get_reply_status());
 	
 	socket->Close();
+}
+
+void start() {
+	int i, head_size, json_size, packet_size;
+	std::vector<Session*> sessions;
+	t_socket client;
+	Http * protocol = new Http();
+	std::string header, filename, id, json_msg;
+	bool is_json;
+	bool start;
+	t_byte * rcv_packet = (t_byte*) malloc(sizeof(t_byte) * 1024);
+	t_byte * snd_packet;
+
+	PRINT("Server running on port: " << server->getPort());
+	
+	while(true) {
+		id = "";
+		json_msg = "";
+
+		client = server->Accept();
+
+		Socket::readFrom(client, rcv_packet, 1024);
+		
+		PRINT(rcv_packet)
+		
+		protocol->processRequest(rcv_packet);
+		
+		is_json = protocol->get_content_type() == Http::ContentType::JSON ? true : false;
+		
+		if(is_json) {
+			std::string aux(rcv_packet);
+			bool accept = true;
+			json = aux.substr(aux.find("\r\n\r\n") + 4,  aux.length() - 1);
+			
+			id = getValue("session_id", json, ":");
+
+			if(id.length() > 0) {
+				aux = getValue("command", json, ":");
+				
+				if(aux.length() > 0) {
+					if(aux.find("open") != std::string::npos) {
+						PRINT("Command received: Start session: " << id);
+						
+						sessions.push_back(new Session(id, g_initial_udp_port++, 1000, g_initial_tcp_port++, g_site_path, g_dash_profile, g_dash_path));
+						
+						while(!sessions.back()->bindUdpPort())
+							sessions.back()->setUdpPort(g_initial_udp_port++);
+						
+						while(!sessions.back()->bindHttpPort()) 
+							sessions.back()->setHttpPort(g_initial_tcp_port++);
+						
+						std::thread session([=](){sessions.back()->start(); return 1;});
+						session.detach();
+						
+						json = "{\n\"ip\":\"" + g_server_ip + "\",\n\"udp\":\"" + std::to_string(sessions.back()->getUdpPort()) + "\",\n\"http\":\"" + std::to_string(sessions.back()->getHttpPort()) + "\"\n}";
+					} else if(aux.find("close") != std::string::npos) {
+						PRINT("Command received: Close session: " << id);
+						
+						for(i = 0; i < sessions.size(); i++)
+							if(!id.compare(sessions.at(i)->getID()))
+								break;
+							
+						if(i < sessions.size()) {
+							sessions.at(i)->stop();
+							//sessions.at(i)->~Session();
+							sessions.erase(sessions.begin() + i);
+							
+							json = "";
+						} else {
+							PRINT("Error: session id not found.");
+							json = "";
+						}
+					} else accept = false;
+				} else accept = false;
+			} else accept = false;
+			
+			if(accept) {
+				header = protocol->genResponse(json.length(), "json", "", Http::Status::OK);
+			} else {
+				PRINT("Command received: Invalid");
+				json = "";
+				header = protocol->genResponse(json.length(), "json", "", Http::Status::BAD_REQUEST);
+			}
+		} else header = protocol->genResponse(0, "", "", Http::Status::NOT_FOUND);
+
+		head_size = header.length();
+		json_size = json.length();
+		packet_size = head_size + json_size;
+		
+		snd_packet = (t_byte*) malloc(sizeof(t_byte) * packet_size);
+		
+		memcpy(snd_packet, header.c_str(), head_size);
+		
+		if(is_json)
+			memcpy(snd_packet + head_size, json.c_str(), json_size);
+			
+		Socket::sendTo(client, snd_packet, packet_size);
+		
+		Socket::Close(client);
+
+		memset(rcv_packet, 0, 1024);
+		free(snd_packet);
+	}//20161006528620
+
+	free(rcv_packet);
 }
 
 std::string getValue(std::string field, std::string src, std::string assign_operator) {
@@ -90,138 +307,3 @@ std::string getValue(std::string field, std::string src, std::string assign_oper
 	
 	return ret;	
 }
-
-void start() {
-	int i, head_size, json_size, packet_size;
-	int g_http_port = g_server_port;
-	int g_udp_port = 1234;
-	std::vector<Session*> sessions;
-	t_socket client;
-	Http * header = new Http();
-	std::string resp_header, filename, id, json_msg;
-	bool is_json;
-	bool start;
-	t_byte * rcv_packet = (t_byte*) malloc(sizeof(t_byte) * 1024);
-	t_byte * snd_packet;
-
-	PRINT("Server running on port: " << server->getPort());
-	
-	while(true) {
-		id = "";
-		json_msg = "";
-
-		client = server->Accept();
-		
-		if(client < 0)
-			PRINT("ERROR ON ACCEPT")
-
-		Socket::readFrom(client, rcv_packet, 1024);
-		
-		PRINT(rcv_packet)
-		
-		header->processRequest(rcv_packet);
-		
-		//filename = header->get_reqsted_file();
-		
-		//is_json = !filename.substr(filename.rfind(".", filename.length() - 1) + 1, filename.length()).compare("json");
-		
-		is_json = header->get_content_type() == Http::ContentType::JSON ? true : false;
-		
-		if(is_json) {
-			std::string aux(rcv_packet);
-			bool accept = true;
-			json_msg = aux.substr(aux.find("\r\n\r\n") + 4,  aux.length() - 1);
-			
-			id = getValue("session_id", json_msg, ":");
-
-			if(id.length() > 0) {
-				aux = getValue("command", json_msg, ":");
-				
-				if(aux.length() > 0) {
-					if(aux.find("open") != std::string::npos) {
-						PRINT("Command received: Start session: " << id);
-						
-						sessions.push_back(new Session(id, g_udp_port++, 33, g_http_port++, "/home/jorismar/proxy/site"));
-						
-						while(!sessions.back()->bindUdpPort())
-							sessions.back()->setUdpPort(g_udp_port++);
-						
-						while(!sessions.back()->bindHttpPort()) 
-							sessions.back()->setHttpPort(g_http_port++);
-						
-						std::thread session([=](){sessions.back()->start(); return 1;});
-						session.detach();
-						
-						json_msg = "{\n\"ip\":\"" + g_server_ip + "\",\n\"udp\":\"" + std::to_string(sessions.back()->getUdpPort()) + "\",\n\"http\":\"" + std::to_string(sessions.back()->getHttpPort()) + "\"\n}";
-					} else if(aux.find("close") != std::string::npos) {
-						PRINT("Command received: Close session: " << id);
-						
-						for(i = 0; i < sessions.size(); i++)
-							if(!id.compare(sessions.at(i)->getID()))
-								break;
-							
-						if(i < sessions.size()) {
-							sessions.at(i)->stop();
-							//sessions.at(i)->~Session();
-							sessions.erase(sessions.begin() + i);
-							
-							json_msg = "";
-						} else {
-							PRINT("Error: session id not found.");
-							json_msg = "";
-						}
-					} else accept = false;
-				} else accept = false;
-			} else accept = false;
-			
-			if(accept) {
-				resp_header = header->genResponse(json_msg.length(), "json", "", Http::Status::OK);
-			} else {
-				PRINT("Command received: Invalid");
-				json_msg = "";
-				resp_header = header->genResponse(json_msg.length(), "json", "", Http::Status::BAD_REQUEST);
-			}
-		} else resp_header = header->genResponse(0, "", "", Http::Status::NOT_FOUND);
-
-		head_size = resp_header.length();
-		json_size = json_msg.length();
-		packet_size = head_size + json_size;
-		
-		snd_packet = (t_byte*) malloc(sizeof(t_byte) * packet_size);
-		
-		memcpy(snd_packet, resp_header.c_str(), head_size);
-		
-		if(is_json)
-			memcpy(snd_packet + head_size, json_msg.c_str(), json_size);
-			
-		Socket::sendTo(client, snd_packet, packet_size);
-		
-		Socket::Close(client);
-
-		memset(rcv_packet, 0, 1024);
-		free(snd_packet);
-	}//20161006528620
-
-	free(rcv_packet);
-}
-
-int main(int argc, char *argv[]) {
-	signIn(g_init_ip, g_init_port);
-	start();
-
-    return 0;
-}
-
-/*
-POST /file.json HTTP/1.1
-Host: 192.168.15.128:8080
-Connection: keep-alive
-Content-Length: 0
-User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.111 Safari/537.36
-Cache-Control: no-cache
-Origin: chrome-extension://mkhojklkhkdaghjjfdnphfphiaiohkef
-Accept: **
-DNT: 1
-Accept-Encoding: gzip, deflate
-Accept-Language: pt-BR,pt;q=0.8,en-US;q=0.6,en;q=0.4
-*/

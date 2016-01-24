@@ -8,6 +8,8 @@ class Session {
     private:
         std::string id;
         std::string path;
+        int dashprofile;
+        std::string dashpath;
         int udp_port;
         int http_port;
         Webserver * webserver;
@@ -17,7 +19,7 @@ class Session {
 
     
     public:
-        Session(std::string, int, t_size, int, std::string);
+        Session(std::string, int, t_size, int, std::string, int, std::string);
         virtual ~Session();
         
         bool bindUdpPort();
