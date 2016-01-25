@@ -14,6 +14,7 @@
 #include "types.h"
 #include "virtualfile.h"
 #include "http.h"
+#include "dash.h"
 
 class Webserver {
     private:
@@ -24,13 +25,15 @@ class Webserver {
         Buffer ** a_dash_buffer;
         t_socket client;
         std::string page_path;
+        std::string dash_path;
         bool alive;
         int port;
+        int dash_profile;
         bool sequential_read_buffer;    // if true, checking the name of the dash file will be ignored
         t_pos current;
         
     public:
-        Webserver(int, Buffer**, Buffer**, std::string, bool);
+        Webserver(int, int, Buffer**, Buffer**, std::string, std::string, bool);
         virtual ~Webserver();
         
         bool openConnection();

@@ -1,15 +1,17 @@
+#ifndef SESSION_H
+#define SESSION_H
+
 #include <string>
 #include "webserver.h"
 #include "buffer.h"
 #include "types.h"
+#include "dash.h"
 //#inclide "dashcast.h"
 
 class Session {
     private:
         std::string id;
         std::string path;
-        int dashprofile;
-        std::string dashpath;
         int udp_port;
         int http_port;
         Webserver * webserver;
@@ -37,3 +39,5 @@ class Session {
         
         // implementar get ports
 };
+
+#endif

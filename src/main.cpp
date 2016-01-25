@@ -4,6 +4,7 @@
 #include "mpegts.h"
 #include "webserver.h"
 #include "http.h"
+#include "dash.h"
 #include <cstdio>
 #include <thread>
 #include <vector>
@@ -14,15 +15,22 @@
 #define UDP_PORT 1234
 
 std::string g_server_ip 		= "127.0.0.1";
-int 		g_server_port 		= 8090;
-int 		g_initial_tcp_port 	= g_server_port + 1;
+int 		g_server_port 		= 8080;
+int 		g_initial_tcp_port 	= 8090;
 int 		g_initial_udp_port 	= 1234;
 std::string g_site_path 		= "./site";
 int 		g_dash_profile 		= 1; 				// 0 = live, 1 = on demand
 std::string g_dash_path 		= "./dash";
+std::string g_mpd_name			= "dashcast.mpd";
 std::string g_controller_ip 	= "127.0.0.1";
 int 		g_controller_port 	= 8080;
 std::string g_controller_url_path = "ArthronRest/api/dash_sessions";
+
+Socket * server;
+
+void registerOnController();
+void start();
+std::string getValue(std::string, std::string, std::string);
 
 int main(int argc, char *argv[]) {
 	 std::string::size_type sz;
@@ -70,16 +78,15 @@ int main(int argc, char *argv[]) {
 			}
 		} else if(!arg.compare("-site-path")) {
 			g_site_path = argv[++i];
-		} else if(!arg.compare("-dash-profile")) {
-			arg = argv[++i];
-			
-			if(!arg.compare("live")) {
-				g_dash_profile = 0;
+		} else if(!arg.compare("-live")) {
+				g_dash_profile = Dash::Profile::LIVE;
 				g_dash_path = "";
-			}else if(!arg.compare("on-demand")) g_dash_profile = 1;
-					else std::cout << "Invalid dash profile" << std::endl;
+		}else if(!arg.compare("-on-demand")) {
+			g_dash_profile = Dash::Profile::ON_DEMAND;
 		} else if(!arg.compare("-dash-path")) {
 			g_dash_path = argv[++i];
+		} else if(!arg.compare("-mpd")) {
+			g_mpd_name = argv[++i];
 		} else if(!arg.compare("-controller-ip")) {
 			g_controller_ip = argv[++i];
 		} else if(!arg.compare("-controller-port")) {
@@ -99,20 +106,26 @@ int main(int argc, char *argv[]) {
 		} else if(!arg.compare("-h") || !arg.compare("--help")) {
 			arg = argv[0];
 			
-			std::string str("Usage: " + arg + " [config options]");
+			std::string str("Usage: " + arg + " [config options]\n\n");
 			
-			str += "-ip <ip>\t IP of dashproxy server";
-			str += "-port <port>\t TCP port of proxy server used to connect with controller server";
-			str += "-initial-tcp-port <port>\t Select the initial port used to create new sessions";
-			str += "-initial-udp-port <port>\t Select the initial port used to create new sessions";
-			str += "-site-path <directory>\t Location of directory of the site files";
-			str += "-dash-profile <live / on-demand>\t Selects the profile dash to be used";
-			str += "-dash-path <directory>\t location of directory of the dash files (fragments, initializations and mpd) used in on-demand profile";
-			str += "-controller-ip <ip>\t";
-			str += "-controller-port <port>\t";
-			str += "-controller-url-path <url-path>\t The path of the controller used to recongnize the server mensage";
+			str += "  -ip <ip>                  IP of dashproxy server\n";
+			str += "  -port <port>              TCP port of proxy server used to connect with\n";
+			str += "                            controller server\n";
+			str += "  -initial-tcp-port <port>  Select the initial port used to create new sessions\n";
+			str += "  -initial-udp-port <port>  Select the initial port used to create new sessions\n";
+			str += "  -site-path <directory>    Location of directory of the site files\n";
+			str += "  -live or -on-demand       Selects the profile dash to be used\n";
+			str += "  -mpd <name>               Define the MPD name.\n";
+			str += "  -dash-path <directory>    Location of directory of the dash files (fragments,\n";
+			str += "                            initializations and mpd) used in on-demand profile\n";
+			str += "  -controller-ip <ip>       IP of the session controllers\n";
+			str += "  -controller-port <port>   Port of the session controllers\n";
+			str += "  -controller-url-path <url-path>  The path of the controller used to recongnize\n";
+			str += "                            the server mensage\n";
 			
 			std::cout << str << std::endl;
+			
+			return 0;
 		} else {
 			std::cout << "Invalid Parameter: " << argv[i] << std::endl;
 			return 1;
@@ -126,13 +139,15 @@ int main(int argc, char *argv[]) {
 	std::cout << "Initial HTTP Session Port: " << g_initial_tcp_port << std::endl;
 	std::cout << "Initial UDP Session Port: " << g_initial_udp_port << std::endl;
 	std::cout << "Site Directory: \"" << g_site_path << "\"" << std::endl;
-	std::cout << "Dash Profile: " << (g_dash_profile == 0 ? "live" : g_dash_profile == 1 ? "on-demand" : "Invalid") << std::endl;
+	std::cout << "Dash Profile: " << (g_dash_profile == Dash::Profile::LIVE ? "live" : g_dash_profile == Dash::Profile::ON_DEMAND ? "on-demand" : "Invalid") << std::endl;
+	std::cout << "MPD Name: " << g_mpd_name << std::endl;
 	std::cout << "Dash Directory: \"" << g_dash_path << "\"" << std::endl;
 	std::cout << "Controller Server IP: " << g_controller_ip << std::endl;
 	std::cout << "Controller Server Port: " << g_controller_port << std::endl;
 	std::cout << "Controller URL Path: \"" << g_controller_url_path << "\"" << std::endl << std::endl;
 	
 	registerOnController();
+	start();
 	
     return 0;
 }
@@ -141,16 +156,20 @@ void registerOnController() {
 	Http * protocol = new Http();
 	Socket * socket = new Socket();
 	
-	EXIT_IF(socket->Connect(ip, port) < 0, "");
+	EXIT_IF(socket->Connect(g_controller_ip, g_controller_port) < 0, "");
 	
-	while(server->Bind() < 0 || server->Listen(1000) < 0) {
+	/* selecting server port */
+	server = new Socket(g_server_port);
+	
+	while(server->Bind() < 0 || server->Listen(10) < 0) {
 		server->setPort(++g_server_port);
 		PRINT("Server port changed to " << g_server_port);
 	}
 	
+	/* preparing request message */
 	std::string json = "{\"session_id\" : \"init\", \"ip\" : \"" + g_server_ip + "\", \"port\" : \"" + std::to_string(g_server_port) + "\"}";
 	
-	std::string header = protocol->genRequest(g_controller_url_path, (t_size) json.length(), Http::ContentType::JSON, "*/*", ip + ":" + std::to_string(port), Http::Method::POST);
+	std::string header = protocol->genRequest(g_controller_url_path, (t_size) json.length(), Http::ContentType::JSON, "*/*", g_controller_ip + ":" + std::to_string(g_controller_port), Http::Method::POST);
 	
 	int size = header.length() + json.length();
 	
@@ -159,52 +178,54 @@ void registerOnController() {
 	memcpy(buffer, header.c_str(), header.length());
 	memcpy(buffer + header.length(), json.c_str(), json.length());
 	
+	/* sending request message */
 	EXIT_IF(socket->Send(buffer, size) < 0, "");
 
+	//PRINT(buffer)
+
 	memset(buffer, 0, size);
 
+	/* receiving response */
 	EXIT_IF(socket->Receive(buffer, size, 30) < 0, "");
-	
-	protocol->clear();
 
+	/* checking if request was accepted */
 	protocol->processResponse(buffer);
-	
-	memset(buffer, 0, size);
+
+	//PRINT(buffer)
+
 	free(buffer);
+	socket->Close();
 
 	EXIT_IF(protocol->get_reply_status() != Http::Status::CREATED, "Error: The server responded with status code " << protocol->get_reply_status());
-	
-	socket->Close();
 }
 
 void start() {
-	int i, head_size, json_size, packet_size;
+	int head_size, json_size, packet_size;
 	std::vector<Session*> sessions;
-	t_socket client;
 	Http * protocol = new Http();
-	std::string header, filename, id, json_msg;
-	bool is_json;
-	bool start;
-	t_byte * rcv_packet = (t_byte*) malloc(sizeof(t_byte) * 1024);
+	std::string header, id, json;
+	bool isjson;
+	t_byte * rcv_packet = (t_byte*) malloc(sizeof(t_byte) * 2024);
 	t_byte * snd_packet;
+	t_socket client;
 
 	PRINT("Server running on port: " << server->getPort());
 	
 	while(true) {
 		id = "";
-		json_msg = "";
+		json = "";
 
 		client = server->Accept();
 
-		Socket::readFrom(client, rcv_packet, 1024);
+		Socket::readFrom(client, rcv_packet, 2024, 0);
 		
-		PRINT(rcv_packet)
-		
+		//PRINT(rcv_packet)
+
 		protocol->processRequest(rcv_packet);
 		
-		is_json = protocol->get_content_type() == Http::ContentType::JSON ? true : false;
+		isjson = protocol->get_content_type() == Http::ContentType::JSON;
 		
-		if(is_json) {
+		if(isjson) {
 			std::string aux(rcv_packet);
 			bool accept = true;
 			json = aux.substr(aux.find("\r\n\r\n") + 4,  aux.length() - 1);
@@ -229,13 +250,15 @@ void start() {
 						std::thread session([=](){sessions.back()->start(); return 1;});
 						session.detach();
 						
-						json = "{\n\"ip\":\"" + g_server_ip + "\",\n\"udp\":\"" + std::to_string(sessions.back()->getUdpPort()) + "\",\n\"http\":\"" + std::to_string(sessions.back()->getHttpPort()) + "\"\n}";
+						json = "{\"ip\":\"" + g_server_ip + "\",\n\"udp\":\"" + std::to_string(sessions.back()->getUdpPort()) + "\",\n\"http\":\"" + std::to_string(sessions.back()->getHttpPort()) + "\", \"mpd_name\" : \"" + g_mpd_name + "\"}";
 					} else if(aux.find("close") != std::string::npos) {
 						PRINT("Command received: Close session: " << id);
+						int i;
 						
-						for(i = 0; i < sessions.size(); i++)
+						for(i = 0; i < sessions.size(); i++) {
 							if(!id.compare(sessions.at(i)->getID()))
 								break;
+						}
 							
 						if(i < sessions.size()) {
 							sessions.at(i)->stop();
@@ -265,23 +288,55 @@ void start() {
 		packet_size = head_size + json_size;
 		
 		snd_packet = (t_byte*) malloc(sizeof(t_byte) * packet_size);
+		memset(rcv_packet, 0, 2024);
 		
 		memcpy(snd_packet, header.c_str(), head_size);
 		
-		if(is_json)
+		if(isjson)
 			memcpy(snd_packet + head_size, json.c_str(), json_size);
 			
 		Socket::sendTo(client, snd_packet, packet_size);
 		
-		Socket::Close(client);
+		//PRINT(snd_packet)
 
-		memset(rcv_packet, 0, 1024);
+		server->CloseClient();
+
+		memset(rcv_packet, 0, 2024);
 		free(snd_packet);
-	}//20161006528620
+	}
 
 	free(rcv_packet);
 }
 
+std::string getValue(std::string field, std::string src, std::string assign_operator) {
+	std::string ret = "";
+	int i, pos;
+	char c;
+	
+	pos = src.find("\"" + field + "\"");
+	
+	if(pos != std::string::npos) {
+		c = ':';
+		
+		for(i = pos + field.length() + 2; i < src.length(); i++) {
+			if(src.at(i) == c) {
+				if(c == ':') {
+					c = '\"';
+				} else if(c == '\"') {
+					for(i = i + 1; i < src.length() && src.at(i) != '\"'; i++) {
+						ret += src.at(i);
+					}
+					
+					break;
+				}
+			} else if(src.at(i) != ' ')
+				break;
+		}
+	}
+
+	return ret;
+}
+/*
 std::string getValue(std::string field, std::string src, std::string assign_operator) {
 	std::string ret = "";
 	int i, pos;
@@ -306,4 +361,4 @@ std::string getValue(std::string field, std::string src, std::string assign_oper
 	}
 	
 	return ret;	
-}
+}*/

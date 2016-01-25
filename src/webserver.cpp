@@ -1,7 +1,9 @@
 #include "webserver.h"
 
-Webserver::Webserver(int svr_port, Buffer **video_buffer, Buffer **audio_buffer, std::string path, bool is_sequential) {
+Webserver::Webserver(int svr_port, int dash_profile, Buffer **video_buffer, Buffer **audio_buffer, std::string path, std::string dash_path, bool is_sequential) {
     this->port = svr_port;
+    this->dash_profile = dash_profile;
+    this->dash_path = dash_path;
     this->v_dash_buffer = video_buffer;
     this->a_dash_buffer = audio_buffer;
     this->page_path = path;
@@ -97,30 +99,36 @@ void Webserver::startClient(t_socket cl) {
 }
 
 VirtualFile * Webserver::getFile(std::string filename) {
-    int i = 0;
     std::string filetype = filename.substr(filename.rfind(".", filename.length() - 1) + 1, filename.length() - 1);
     VirtualFile * file = NULL;
+    std::string dashtypes = "m4smpdmp4";
+    std::string rqstfile;
     
-    //if(!filetype.compare("m4s")) {
-        //file = this->readExternalBuffer(filename);
-    //} else {
-        if(!filename.compare("/")) {
-            filename = "/index.html";
-            filetype = "html";
+    if(filetype.length() > 0 && dashtypes.find(filetype) != std::string::npos) {
+        if(this->dash_profile == Dash::Profile::LIVE) {
+            file = this->readExternalBuffer(filename);
+            return file;
+        } else if(this->dash_profile == Dash::Profile::ON_DEMAND) {
+            rqstfile = this->dash_path + filename;
         }
-        file = this->readFile(filename, filetype);
-    //}
+    } else {
+        if(!filename.compare("/")) {
+            rqstfile = this->page_path + "/index.html";
+            filetype = "html";
+        } else rqstfile = this->page_path + filename;
+    }
     
+    file = this->readFile(rqstfile, filetype);
+
     return file;
 }
 
-VirtualFile * Webserver::readFile(std::string filename, std::string filetype) {
+VirtualFile * Webserver::readFile(std::string path, std::string filetype) {
 	int count;
 	char * bin;
 	FILE * pfile;
-    std::string path(this->page_path + filename);
     VirtualFile * vfile;
-
+    
 	pfile = fopen(path.c_str(), "rb");
 	
     if(pfile == NULL) return NULL;
@@ -133,7 +141,7 @@ VirtualFile * Webserver::readFile(std::string filename, std::string filetype) {
 
     count = fread(bin, 1, fsize, pfile);
     
-    vfile = new VirtualFile(filename, filetype, Http::getDate(), bin, count);
+    vfile = new VirtualFile(path, filetype, Http::getDate(), bin, count);
 
     fclose(pfile);
         
@@ -142,17 +150,10 @@ VirtualFile * Webserver::readFile(std::string filename, std::string filetype) {
 
 VirtualFile * Webserver::readExternalBuffer(std::string filename) {
     VirtualFile * file = NULL;
-    Buffer ** buff = filename.find("vid") != std::string::npos ? v_dash_buffer : a_dash_buffer;
+    Buffer ** buff = filename.find("vid") != std::string::npos ? this->v_dash_buffer : this->a_dash_buffer;
     // Se necessário, inserir comparativo para audio
     
-    if(!this->sequential_read_buffer) {
-        do {
-            file = (*buff)->get(this->current);
-            this->current = ++current % (*buff)->size();
-        } while(file != NULL && filename.find(file->filename()) == std::string::npos /*&& i < (*buff)->size()*/);
-    } else file = (*buff)->next();
-    
-    return file;
+    return (*buff)->next();
 }
 
 void Webserver::setPort(int svr_port) {

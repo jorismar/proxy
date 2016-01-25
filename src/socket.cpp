@@ -110,6 +110,14 @@ void Socket::Close() {
     close(this->cl_socket);
 }
 
+void Socket::CloseServer() {
+    close(this->svr_socket);
+}
+
+void Socket::CloseClient() {
+    close(this->cl_socket);
+}
+
 int Socket::getPort() {
     return this->port;
 }

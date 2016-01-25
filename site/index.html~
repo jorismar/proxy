@@ -15,7 +15,7 @@
 	<script>
 		// setup the video element and attach it to the Dash player
 		function setupVideo() {
-		  var url = "http://192.168.15.128:8081/fragments/video.mpd";
+		  var url = "http://150.165.205.84:8090/fragments/video.mpd";
 		  var context = new Dash.di.DashContext();
 		  var player = new MediaPlayer(context);
 				  player.startup();

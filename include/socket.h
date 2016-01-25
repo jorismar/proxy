@@ -33,6 +33,8 @@ class Socket {
         int Response(t_byte*, t_size);
         int Receive(t_byte*, t_size, int);
         void Close();
+        void CloseServer();
+        void CloseClient();
         int getPort();
         void setPort(int);
         

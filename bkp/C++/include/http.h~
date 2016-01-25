@@ -1,4 +1,0 @@
-#ifndef HTTP_SOCKET
-#define HTTP_SOCKET
-
-#include <arpa/inet.h>

@@ -1,22 +1,25 @@
 #include "session.h"
 
-Session::Session(std::string id, int udp_port, t_size buffer_size, int http_port, std::string site_path, int dash_profile std::string dash_path) {
+Session::Session(std::string id, int udp_port, t_size buffer_size, int http_port, std::string site_path, int dash_profile, std::string dash_path) {
     this->id = id;
     this->path = site_path;
-    this->dashprofile = dash_profile;
-    this->dashpath = dash_path;
     this->udp_port = udp_port;
     this->http_port = http_port;
-    this->video_dash_buffer = new Buffer(buffer_size);
-    this->audio_dash_buffer = new Buffer(buffer_size - 1);
-//  this->dashserver = new Dashcast(udp_port, &this->dashbuffer);
-    this->webserver = new Webserver(http_port, &this->video_dash_buffer, &this->audio_dash_buffer, path, true);
+    
+    if(dash_profile == Dash::Profile::ON_DEMAND) {
+        this->webserver = new Webserver(http_port, dash_profile, NULL, NULL, path, dash_path, true);
+    } else {
+        this->video_dash_buffer = new Buffer(buffer_size);
+        this->audio_dash_buffer = new Buffer(buffer_size - 1);
+        this->webserver = new Webserver(http_port, dash_profile, &this->video_dash_buffer, &this->audio_dash_buffer, path, dash_path, true);
+    }
+//  this->dashserver = new Dash(udp_port, &this->dashbuffer);
 }
 
 Session::~Session() {
     this->video_dash_buffer->~Buffer();
     this->audio_dash_buffer->~Buffer();
-//  this->dashserver->~Dashcast();
+//  this->dashserver->~Dash();
     this->webserver->~Webserver();
 }
 
