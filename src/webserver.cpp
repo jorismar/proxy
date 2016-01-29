@@ -109,6 +109,9 @@ VirtualFile * Webserver::getFile(std::string filename) {
             file = this->readExternalBuffer(filename);
             return file;
         } else if(this->dash_profile == Dash::Profile::ON_DEMAND) {
+			if(!filetype.compare("m4s"))
+				filename = (filename.find("video") != std::string::npos ? "video" : "audio") + std::to_string(this->current) + "." + filetype;
+
             rqstfile = this->dash_path + filename;
         }
     } else {
@@ -119,6 +122,9 @@ VirtualFile * Webserver::getFile(std::string filename) {
     }
     
     file = this->readFile(rqstfile, filetype);
+	
+	if(file != NULL)
+		this->current++;
 
     return file;
 }

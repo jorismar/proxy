@@ -26,6 +26,7 @@ class Webserver {
         t_socket client;
         std::string page_path;
         std::string dash_path;
+        t_pos dash_frag_count;
         bool alive;
         int port;
         int dash_profile;
