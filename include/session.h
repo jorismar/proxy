@@ -2,11 +2,12 @@
 #define SESSION_H
 
 #include <string>
+#include <cstdlib>
 #include "webserver.h"
 #include "buffer.h"
 #include "types.h"
 #include "dash.h"
-//#inclide "dashcast.h"
+//#include "dashcast.h"
 
 class Session {
     private:
@@ -14,6 +15,7 @@ class Session {
         std::string path;
         int udp_port;
         int http_port;
+        std::string dash_path;
         Webserver * webserver;
         Buffer * video_dash_buffer;
         Buffer * audio_dash_buffer;

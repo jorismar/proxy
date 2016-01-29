@@ -3,6 +3,7 @@
 Session::Session(std::string id, int udp_port, t_size buffer_size, int http_port, std::string site_path, int dash_profile, std::string dash_path) {
     this->id = id;
     this->path = site_path;
+    this->dash_path = dash_path;
     this->udp_port = udp_port;
     this->http_port = http_port;
     
@@ -74,11 +75,15 @@ void Session::start() {
     //vid.detach();
     //aud.detach();
 /************************************************/
+    //std::string cmd = "DashCast -av \"udp://:" + std::to_string(this->udp_port) + "?fifo_size=100000\" -live -out \"" + this->dash_path + "\"";
 
+    
     PRINT("Session running on UDP:" << this->udp_port << "/HTTP:" << this->http_port);
 
-	std::thread websvr([=](){this->webserver->start(); return 1;});
+    std::thread websvr([=](){this->webserver->start(); return 1;});
+    //std::thread dashcast([=](){std::system(cmd.c_str()); return 1;});
 
+    //dashcast.detach();
     websvr.join();
 }
 

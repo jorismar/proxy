@@ -15,7 +15,7 @@ MPEGTS::MPEGTS(DataPacket * mpegts_packet) {
     
     this->adaptation.length     = this->header.adapt_control ? ts_packet[4] : 0;
 
-    if(this->header.adapt_control && this->adaptation.length) {
+    if(this->header.adapt_control) {
         this->adaptation.discontinuity  = ts_packet[5] >> 7;
         this->adaptation.random_access  = ts_packet[5] << 1 >> 7;
         this->adaptation.es_priority    = ts_packet[5] << 2 >> 7;

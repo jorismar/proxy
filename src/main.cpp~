@@ -33,7 +33,7 @@ void start();
 std::string getValue(std::string, std::string, std::string);
 
 int main(int argc, char *argv[]) {
-	std::string::size_type sz;
+	 std::string::size_type sz;
 	
 	for(int i = 1; i < argc; i++) {
 		std::string arg(argv[i]); 
@@ -205,7 +205,7 @@ void start() {
 	Http * protocol = new Http();
 	std::string header, id, json;
 	bool isjson;
-	t_byte * rcv_packet = (t_byte*) malloc(sizeof(t_byte) * Http::BufferSize::MAX);
+	t_byte * rcv_packet = (t_byte*) malloc(sizeof(t_byte) * 2024);
 	t_byte * snd_packet;
 	t_socket client;
 
@@ -217,7 +217,7 @@ void start() {
 
 		client = server->Accept();
 
-		Socket::readFrom(client, rcv_packet, Http::BufferSize::MAX, 0);
+		Socket::readFrom(client, rcv_packet, 2024, 0);
 		
 		//PRINT(rcv_packet)
 
@@ -301,7 +301,7 @@ void start() {
 
 		server->CloseClient();
 
-		memset(rcv_packet, 0, Http::BufferSize::MAX);
+		memset(rcv_packet, 0, 2024);
 		free(snd_packet);
 	}
 

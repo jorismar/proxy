@@ -172,7 +172,8 @@ std::string Http::genResponse(t_size filelen, std::string filetype, std::string 
                                                         //!filetype.compare("ico") ? "image/vnd.microsoft.icon" :
             } else if(status == Http::Status::NOT_FOUND) {
                 resp = RPLY_NOT_FOUND;
-                aux = "<center><br><br><font size=\"8\">404</font><br><font size=\"6\">NOT FOUND</font></center>";
+//                aux = "<center><br><br><font size=\"8\">404</font><br><font size=\"6\">NOT FOUND</font></center>";
+                aux = "<center background=\"#000000\"><img src=\"lost.png\"></img></center>";
                 msg = msg + "x-content-type-options: nosniff\r\n";
                 type = "text/html; charset=UTF-8";
                 length = std::to_string(aux.length());
@@ -195,6 +196,8 @@ std::string Http::genResponse(t_size filelen, std::string filetype, std::string 
         resp = RPLY_NOT_IMPLEMENTED;
     }
     
+    msg = msg + "Access-Control-Allow-Origin: *\r\n";
+    msg = msg + "Access-Control-Allow-Headers: X-Requested-With, Content-Type, X-Codingpedia, X-HTTP-Method-Override\r\n";
     msg = msg + "Date: "           + this->getDate()     + "\r\n";
     msg = msg + "X-Powered-By: "   + this->server_name   + "\r\n";
     

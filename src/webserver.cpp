@@ -55,13 +55,13 @@ void Webserver::startClient(t_socket cl) {
     VirtualFile * file;
     std::string hder;
     t_size filesize;
-    t_byte * rcv_packet = (t_byte*) malloc(sizeof(t_byte) * 1024);
+    t_byte * rcv_packet = (t_byte*) malloc(sizeof(t_byte) * Http::BufferSize::MAX);
     t_byte * snd_packet;
     t_size headsize;
     Http * header = new Http();
     
     //do {
-        if(Socket::readFrom(cl, rcv_packet, 1024, 30) < 0);
+        if(Socket::readFrom(cl, rcv_packet, Http::BufferSize::MAX, 30) < 0);
            // break;
 
         header->processRequest(rcv_packet);
@@ -90,7 +90,7 @@ void Webserver::startClient(t_socket cl) {
         
         header->clear();
         free(snd_packet);
-        memset(rcv_packet, 0, 1024);
+        memset(rcv_packet, 0, Http::BufferSize::MAX);
     //} while(file != NULL); //while keep-alive
     
     free(rcv_packet);
