@@ -134,8 +134,8 @@ class Http {
         int reply_status;
         
     public:
-        enum Method {GET, POST};
-        enum ContentType {JSON}; // adicionar outros tipos
+        enum Method {GET, POST, PUT, PATCH, DELETE, COPY, HEAD, OPTIONS, LINK, UNLINK, PURGE};
+        enum ContentType {JSON, MP4, M4S, MPD, JS, JPG, PNG, GIF, OGG, WEBM, ICO, HTML, WAV, MP3};
         enum Status {OK = 200, CREATED = 201, ACCEPTED = 202, PARTIAL_CONTENT = 206, NOT_MODIFIED = 304, BAD_REQUEST = 400, NOT_FOUND = 404, NOT_ACCEPTED = 406, NOT_IMPLEMENTED = 501};
         enum BufferSize {MAX = 1024000};
         

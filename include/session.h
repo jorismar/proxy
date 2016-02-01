@@ -16,6 +16,7 @@ class Session {
         int udp_port;
         int http_port;
         std::string dash_path;
+        std::string mpd_name;
         Webserver * webserver;
         Buffer * video_dash_buffer;
         Buffer * audio_dash_buffer;
@@ -23,7 +24,7 @@ class Session {
 
     
     public:
-        Session(std::string, int, t_size, int, std::string, int, std::string);
+        Session(std::string, int, t_size, int, std::string, int, std::string, std::string);
         virtual ~Session();
         
         bool bindUdpPort();

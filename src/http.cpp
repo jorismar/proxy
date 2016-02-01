@@ -72,12 +72,10 @@ void Http::processResponse(t_byte * header) {
     std::string msg(header);
     
     try {
-        try {
-            this->reply_status = std::stoi(this->getfield(msg, " ", ' '), NULL);
-        } catch(const std::invalid_argument& ex) {}
-    } catch (const std::out_of_range& ex) {}
+        this->reply_status = std::stoi(this->getfield(msg, " ", ' '), NULL);
+    } catch(...) {}
 }
-
+    
 void Http::processRequest(t_byte * header) {
     std::string msg(header);
     
@@ -111,19 +109,21 @@ void Http::processRequest(t_byte * header) {
         aux = this->getfield(msg, "Range: bytes=", '-');
         
         if(aux.length() > 0) {
-            try {
+            //try {
                 try {
                     this->range[0] = std::stoi(aux, &sz);
-                } catch(const std::invalid_argument& ex) {}
-            } catch (const std::out_of_range& ex) {}
+                } catch(...) {}
+                //} catch(const std::invalid_argument& ex) {}
+            //} catch (const std::out_of_range& ex) {}
             
             aux = this->getfield(msg, "Range: bytes=" + aux + '-', '\n');
             
-            try {
+            //try {
                 try {
                     this->range[1] = std::stoi(aux, &sz);
-                } catch(const std::invalid_argument& ex) {}
-            } catch (const std::out_of_range& ex) {}
+                } catch(...) {}
+                //} catch(const std::invalid_argument& ex) {}
+            //} catch (const std::out_of_range& ex) {}
         }
     }
 }
