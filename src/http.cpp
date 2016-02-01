@@ -56,12 +56,15 @@ void Http::setServerName(std::string name) {
 }
 
 std::string Http::getfield(std::string src, std::string mark, char sep) {
-    int src_size = src.length();
+    int src_size = src.length(), mark_start_pos = src.find(mark);
     std::string value = "";
     
-    for(int pos = src.find(mark) + mark.length(); pos < src_size && pos != std::string::npos && src.at(pos) != sep; pos++)
-        value += src.at(pos);
-
+    if(mark_start_pos != std::string::npos) {
+        for(int pos = mark_start_pos + mark.length(); pos < src_size && src.at(pos) != sep; pos++) {
+            value += src.at(pos);
+        }
+    }
+    
     return value;    
 }
 
@@ -162,17 +165,18 @@ std::string Http::genResponse(t_size filelen, std::string filetype, std::string 
 
                 type =  !filetype.compare("mpd") || !filetype.compare("m4s") ? "application/octet-stream" :
                             !filetype.compare("json") ? "application/json; charset=UTF-8" :
+                                !filetype.compare("mp4") || !filetype.compare("webm") || !filetype.compare("ogg") ? type + "video/" + filetype :
                                 "";
                                 //!filetype.compare("html") || !filetype.compare("htm") ? type + "text/html; charset=UTF-8" :
                                     //!filetype.compare("jpg") || !filetype.compare("png") || !filetype.compare("gif") ? type + "image/" + filetype :
-                                        //!filetype.compare("mp4") || !filetype.compare("webm") || !filetype.compare("ogg") ? type + "video/" + filetype :
+                                        //
                                             //!filetype.compare("mp3") || !filetype.compare("acc") ? type + "audio/" + filetype :
                                                 //!filetype.compare("js") ? "application/javascript" :
                                                     //!filetype.compare("ico") ? "image/x-icon" : "";
                                                         //!filetype.compare("ico") ? "image/vnd.microsoft.icon" :
             } else if(status == Http::Status::NOT_FOUND) {
                 resp = RPLY_NOT_FOUND;
-//                aux = "<center><br><br><font size=\"8\">404</font><br><font size=\"6\">NOT FOUND</font></center>";
+//              aux = "<center><br><br><font size=\"8\">404</font><br><font size=\"6\">NOT FOUND</font></center>";
                 aux = "<center background=\"#000000\"><img src=\"lost.png\"></img></center>";
                 msg = msg + "x-content-type-options: nosniff\r\n";
                 type = "text/html; charset=UTF-8";
@@ -182,15 +186,15 @@ std::string Http::genResponse(t_size filelen, std::string filetype, std::string 
                 resp = status == Http::Status::NOT_ACCEPTED ? RPLY_NOT_ACCEPTABLE : RPLY_BAD_REQUEST;
                 msg = msg + "Cache-Control: no-cache, no-store, max-age=0\r\n";
                 connection = "close";
-                type = "application/json; charset=UTF-8";
+                type = "text/html; charset=UTF-8";
             }
             
             msg = msg + "Content-Type: "   + type            + "\r\n";
             msg = msg + "Content-Length: " + length          + "\r\n";
         }
     
-        msg = msg + "Etag: "           + etag            + "\r\n";
-        msg = msg + "Last-Modified: "  + last_modif_date + "\r\n";
+//      msg = msg + "Etag: "           + etag            + "\r\n";
+//      msg = msg + "Last-Modified: "  + last_modif_date + "\r\n";
         msg = msg + "Connection: " + connection + "\r\n";
     } else {
         resp = RPLY_NOT_IMPLEMENTED;

@@ -7,6 +7,7 @@
 #include "dash.h"
 #include <cstdio>
 #include <thread>
+#include <chrono>
 #include <vector>
 #include <session.h>
 
@@ -21,7 +22,7 @@ int 		g_initial_udp_port 	= 1234;
 std::string g_site_path 		= "./site";
 int 		g_dash_profile 		= 1; 				// 0 = live, 1 = on demand
 std::string g_dash_path 		= "./dash";
-std::string g_mpd_name			= "dashcast.mpd";
+std::string g_mpd_name			= "dash.mpd";
 std::string g_controller_ip 	= "127.0.0.1";
 int 		g_controller_port 	= 8080;
 std::string g_controller_url_path = "ArthronRest/api/dash_sessions";
@@ -30,6 +31,7 @@ Socket * server;
 
 void registerOnController();
 void start();
+int find(std::vector<Session*>&, std::string);
 std::string getValue(std::string, std::string, std::string);
 
 int main(int argc, char *argv[]) {
@@ -156,7 +158,11 @@ void registerOnController() {
 	Http * protocol = new Http();
 	Socket * socket = new Socket();
 	
-	EXIT_IF(socket->Connect(g_controller_ip, g_controller_port) < 0, "");
+	while(socket->Connect(g_controller_ip, g_controller_port) < 0) {
+		std::this_thread::sleep_for (std::chrono::milliseconds(800));
+	}
+	
+	PRINT("Connected to the controller.");
 	
 	/* selecting server port */
 	server = new Socket(g_server_port);
@@ -181,22 +187,23 @@ void registerOnController() {
 	/* sending request message */
 	EXIT_IF(socket->Send(buffer, size) < 0, "");
 
-	//PRINT(buffer)
-
+	PRINT("Request start sent.");
+	
 	memset(buffer, 0, size);
 
 	/* receiving response */
 	EXIT_IF(socket->Receive(buffer, size, 30) < 0, "");
+	
+	PRINT("Processing response...");
 
 	/* checking if request was accepted */
 	protocol->processResponse(buffer);
 
-	//PRINT(buffer)
-
 	free(buffer);
 	socket->Close();
 
-	//EXIT_IF(protocol->get_reply_status() != Http::Status::CREATED, "Error: The server responded with status code " << protocol->get_reply_status());
+	//EXIT_IF(protocol->get_reply_status() != Http::Status::CREATED, "[ERROR] The server responded with status code " << protocol->get_reply_status());
+	
 }
 
 void start() {
@@ -209,7 +216,7 @@ void start() {
 	t_byte * snd_packet;
 	t_socket client;
 
-	PRINT("Server running on port: " << server->getPort());
+	PRINT("Server started!\nRunning on port: " << server->getPort());
 	
 	while(true) {
 		id = "";
@@ -219,8 +226,6 @@ void start() {
 
 		Socket::readFrom(client, rcv_packet, Http::BufferSize::MAX, 0);
 		
-		//PRINT(rcv_packet)
-
 		protocol->processRequest(rcv_packet);
 		
 		isjson = protocol->get_content_type() == Http::ContentType::JSON;
@@ -237,49 +242,60 @@ void start() {
 				
 				if(aux.length() > 0) {
 					if(aux.find("open") != std::string::npos) {
-						PRINT("Command received: Start session: " << id);
+						PRINT("Command received: Start " << id);
 						
-						sessions.push_back(new Session(id, g_initial_udp_port++, 1000, g_initial_tcp_port++, g_site_path, g_dash_profile, g_dash_path));
-						
-						while(!sessions.back()->bindUdpPort())
-							sessions.back()->setUdpPort(g_initial_udp_port++);
-						
-						while(!sessions.back()->bindHttpPort()) 
-							sessions.back()->setHttpPort(g_initial_tcp_port++);
-						
-						std::thread session([=](){sessions.back()->start(); return 1;});
-						session.detach();
-						
-						json = "{\"ip\":\"" + g_server_ip + "\",\n\"udp\":\"" + std::to_string(sessions.back()->getUdpPort()) + "\",\n\"http\":\"" + std::to_string(sessions.back()->getHttpPort()) + "\", \"mpd_name\" : \"" + g_mpd_name + "\"}";
-					} else if(aux.find("close") != std::string::npos) {
-						PRINT("Command received: Close session: " << id);
-						int i;
-						
-						for(i = 0; i < sessions.size(); i++) {
-							if(!id.compare(sessions.at(i)->getID()))
-								break;
-						}
+						if(find(sessions, id) < 0) {
+							sessions.push_back(new Session(id, g_initial_udp_port++, 1000, g_initial_tcp_port++, g_site_path, g_dash_profile, g_dash_path));
 							
-						if(i < sessions.size()) {
+							while(!sessions.back()->bindUdpPort())
+								sessions.back()->setUdpPort(g_initial_udp_port++);
+							
+							while(!sessions.back()->bindHttpPort()) 
+								sessions.back()->setHttpPort(g_initial_tcp_port++);
+							
+							std::thread session([=](){sessions.back()->start(); return 1;});
+							session.detach();
+							
+							json = "{\"ip\":\"" + g_server_ip + "\",\n\"udp\":\"" + std::to_string(sessions.back()->getUdpPort()) + "\",\n\"http\":\"" + std::to_string(sessions.back()->getHttpPort()) + "\", \"mpd_name\" : \"" + g_mpd_name + "\"}";
+						} else {
+							PRINT("[ERROR] Failed to open the Session " + id + ". The session already running.");
+							json = "";
+							accept = false;
+						}
+					} else if(aux.find("close") != std::string::npos) {
+						PRINT("Command received: Close " << id);
+							
+						int i = find(sessions, id);
+							
+						if(i >= 0) {
 							sessions.at(i)->stop();
 							//sessions.at(i)->~Session();
 							sessions.erase(sessions.begin() + i);
 							
 							json = "";
 						} else {
-							PRINT("Error: session id not found.");
+							PRINT("[ERROR] Failed to close the session " + id + ". The session does not exist.");
 							json = "";
+							accept = false;
 						}
-					} else accept = false;
-				} else accept = false;
-			} else accept = false;
+					} else {
+						PRINT("Invalid JSON received. Unrecognized command.");
+						accept = false;
+					}
+				} else {
+					PRINT("Invalid JSON received. Command not found.");
+					accept = false;
+				}
+			} else {
+				PRINT("Invalid JSON received. Session ID not found.");
+				accept = false;
+			}
 			
 			if(accept) {
 				header = protocol->genResponse(json.length(), "json", "", Http::Status::OK);
 			} else {
-				PRINT("Command received: Invalid");
 				json = "";
-				header = protocol->genResponse(json.length(), "json", "", Http::Status::BAD_REQUEST);
+				header = protocol->genResponse(0, "", "", Http::Status::BAD_REQUEST);
 			}
 		} else header = protocol->genResponse(0, "", "", Http::Status::NOT_FOUND);
 
@@ -288,7 +304,7 @@ void start() {
 		packet_size = head_size + json_size;
 		
 		snd_packet = (t_byte*) malloc(sizeof(t_byte) * packet_size);
-		memset(rcv_packet, 0, 2024);
+		memset(rcv_packet, 0, Http::BufferSize::MAX);
 		
 		memcpy(snd_packet, header.c_str(), head_size);
 		
@@ -296,8 +312,6 @@ void start() {
 			memcpy(snd_packet + head_size, json.c_str(), json_size);
 			
 		Socket::sendTo(client, snd_packet, packet_size);
-		
-		//PRINT(snd_packet)
 
 		server->CloseClient();
 
@@ -306,6 +320,19 @@ void start() {
 	}
 
 	free(rcv_packet);
+}
+
+int find(std::vector<Session*> &list, std::string id) {
+	int i;
+	
+	for(i = 0; i < list.size(); i++) {
+		if(!id.compare(list.at(i)->getID()))
+			break;
+	}
+	
+	i = i < list.size() ? i : -1;
+	
+	return i;
 }
 
 std::string getValue(std::string field, std::string src, std::string assign_operator) {
@@ -336,29 +363,4 @@ std::string getValue(std::string field, std::string src, std::string assign_oper
 
 	return ret;
 }
-/*
-std::string getValue(std::string field, std::string src, std::string assign_operator) {
-	std::string ret = "";
-	int i, pos;
-	
-	pos = src.find("\"" + field + "\"");
-	
-	if(pos != std::string::npos)
-		pos = src.find(assign_operator, pos + field.length() + 2);
-	
-	if(pos != std::string::npos)
-		pos = src.find("\"", pos + assign_operator.length());
-	
-	if(pos != std::string::npos) {
-		for(i = pos + 1; i < src.length() && src.at(i) != '\"'; i++) {
-			ret += src.at(i);
 
-			if(src.at(i) == ',' && src.at(i) == '\n' && src.at(i) == '}') {
-				ret = "";
-				break;
-			}
-		}
-	}
-	
-	return ret;	
-}*/
