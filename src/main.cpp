@@ -11,6 +11,8 @@
 #include <vector>
 #include <session.h>
 
+/******************************************************************************************/
+
 std::string g_server_ip 		= "127.0.0.1";
 int 		g_server_port 		= 8080;
 int 		g_initial_tcp_port 	= 8090;
@@ -25,10 +27,14 @@ std::string g_controller_url_path = "ArthronRest/api/dash_sessions";
 
 Socket * server;
 
+/******************************************************************************************/
+
 void registerOnController();
 void start();
-int find(std::vector<Session*>&, std::string);
-std::string getValue(std::string, std::string, std::string);
+int findSession(std::vector<Session*>&, std::string);
+std::string getJSONValue(std::string, std::string, std::string);
+
+/******************************************************************************************/
 
 int main(int argc, char *argv[]) {
 	std::string::size_type sz;
@@ -89,21 +95,21 @@ int main(int argc, char *argv[]) {
 			arg = argv[0];
 			
 			PRINT(
-                "Usage: " + arg + " [config options]\n\
-                    \n\r  -ip <ip:str>                  IP of dashproxy server\
-                    \n\r  -port <port:int>              TCP port of proxy server used to connect with\
-                    \n\r                                controller server\
-                    \n\r  -initial-tcp-port <port:int>  Select the initial port used to new sessions\
-                    \n\r  -initial-udp-port <port:int>  Select the initial port used to new sessions\
-                    \n\r  -site-path <directory:str>    Location of directory of the site files\
-                    \n\r  -live or -on-demand           Selects the profile dash to be used\
-                    \n\r  -mpd <name:str>               Define the MPD name.\
-                    \n\r  -dash-path <directory:str>    Location of directory of the dash files used in\
-                    \n\r                                on-demand profile\
-                    \n\r  -controller-ip <ip:str>       IP of the session controllers\
-                    \n\r  -controller-port <port:int>   Port of the session controllers\
-                    \n\r  -controller-url-path <url-path:str>  The path of the controller used to\
-                    \n\r                                recongnize the server mensage\n"\
+                "Usage: " + arg + " [config options]\n\n\
+                    \r -ip <ip:str>                  IP of server machine\n\
+                    \r -port <port:int>              TCP port used to connect proxy server with\n\
+                    \r                               controller server\n\
+                    \r -initial-tcp-port <port:int>  Select the initial port used to new sessions\n\
+                    \r -initial-udp-port <port:int>  Select the initial port used to new sessions\n\
+                    \r -site-path <directory:str>    Location of directory of the site files\n\
+                    \r -live or -on-demand           Selects the profile dash to be used\n\
+                    \r -mpd <name:str>               Define the MPD name.\n\
+                    \r -dash-path <directory:str>    Location of directory of the dash files used in\n\
+                    \r                               on-demand profile\n\
+                    \r -controller-ip <ip:str>       IP of the session controllers\n\
+                    \r -controller-port <port:int>   Port of the session controllers\n\
+                    \r -controller-url-path <url-path:str>  The path of the controller used to\n\
+                    \r                               recongnize the server mensage\n"\
             );
 			
 			return 0;
@@ -134,17 +140,20 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
+/******************************************************************************************/
+
 void registerOnController() {
 	Http * protocol = new Http();
 	Socket * socket = new Socket();
 	
+    /*** Connecting to controller server ***/
 	while(socket->Connect(g_controller_ip, g_controller_port) < 0) {
 		std::this_thread::sleep_for (std::chrono::milliseconds(1000));
 	}
 	
 	PRINT("Connected to the controller.");
 	
-	/* selecting server port */
+	/*** selecting server port ***/
 	server = new Socket(g_server_port);
 	
 	while(server->Bind() < 0 || server->Listen(10) < 0) {
@@ -152,7 +161,7 @@ void registerOnController() {
 		PRINT("Server port changed to " << g_server_port);
 	}
 	
-	/* preparing request message */
+	/*** preparing request message ***/
 	std::string json = "{\"session_id\" : \"init\", \"ip\" : \"" + g_server_ip + "\", \"port\" : \"" + std::to_string(g_server_port) + "\"}";
 	
 	std::string header = protocol->genRequest(g_controller_url_path, (t_size) json.length(), Http::ContentType::JSON, "*/*", g_controller_ip + ":" + std::to_string(g_controller_port), Http::Method::POST);
@@ -164,19 +173,19 @@ void registerOnController() {
 	memcpy(buffer, header.c_str(), header.length());
 	memcpy(buffer + header.length(), json.c_str(), json.length());
 	
-	/* sending request message */
+	/*** sending request message ***/
 	EXIT_IF(socket->Send(buffer, size) < 0, "");
 
 	PRINT("Request start sent.");
 	
 	memset(buffer, 0, size);
 
-	/* receiving response */
+	/*** receiving response ***/
 	EXIT_IF(socket->Receive(buffer, size, 30) < 0, "");
 	
 	PRINT("Processing response...");
 
-	/* checking if request was accepted */
+	/*** checking if request was accepted ***/
 	protocol->processResponse(buffer);
 
 	free(buffer);
@@ -184,6 +193,8 @@ void registerOnController() {
 
 	EXIT_IF(protocol->get_reply_status() != Http::Status::CREATED, "[ERROR] The server responded with status code " << protocol->get_reply_status());
 }
+
+/******************************************************************************************/
 
 void start() {
 	int head_size, json_size, packet_size;
@@ -195,7 +206,7 @@ void start() {
 	t_byte * snd_packet;
 	t_socket client;
 
-	PRINT("Server started!\nRunning on port: " << server->getPort());
+	PRINT("Server started!\n Running on port: " << server->getPort());
 	
 	while(true) {
 		id = "";
@@ -214,17 +225,17 @@ void start() {
 			bool accept = true;
 			json = aux.substr(aux.find("\r\n\r\n") + 4,  aux.length() - 1);
 			
-			id = getValue("session_id", json, ":");
+			id = getJSONValue("session_id", json, ":");
 
 			if(id.length() > 0) {
-				aux = getValue("command", json, ":");
+				aux = getJSONValue("command", json, ":");
 				json = "";
                 
 				if(aux.length() > 0) {
 					if(aux.find("open") != std::string::npos) {
 						PRINT("Command received: Start " << id);
 						
-						if(find(sessions, id) < 0) {
+						if(findSession(sessions, id) < 0) {
 							sessions.push_back(new Session(id, g_initial_udp_port++, 1000, g_initial_tcp_port++, g_site_path, g_dash_profile, g_dash_path, g_mpd_name));
 							
 							while(!sessions.back()->bindUdpPort())
@@ -244,7 +255,7 @@ void start() {
 					} else if(aux.find("close") != std::string::npos) {
 						PRINT("Command received: Close " << id);
 							
-						int i = find(sessions, id);
+						int i = findSession(sessions, id);
 							
 						if(i >= 0) {
 							sessions.at(i)->stop();
@@ -279,7 +290,6 @@ void start() {
 		packet_size = head_size + json_size;
 		
 		snd_packet = (t_byte*) malloc(sizeof(t_byte) * packet_size);
-		memset(rcv_packet, 0, Http::BufferSize::MAX);
 		
 		memcpy(snd_packet, header.c_str(), head_size);
 		
@@ -288,7 +298,7 @@ void start() {
 			
 		Socket::sendTo(client, snd_packet, packet_size);
 
-		server->CloseClient();
+		Socket::Close(client);
 
 		memset(rcv_packet, 0, Http::BufferSize::MAX);
 		free(snd_packet);
@@ -297,7 +307,9 @@ void start() {
 	free(rcv_packet);
 }
 
-int find(std::vector<Session*> &list, std::string id) {
+/******************************************************************************************/
+
+int findSession(std::vector<Session*> &list, std::string id) {
 	int i;
 	
 	for(i = 0; i < list.size(); i++) {
@@ -310,7 +322,9 @@ int find(std::vector<Session*> &list, std::string id) {
 	return i;
 }
 
-std::string getValue(std::string field, std::string src, std::string assign_operator) {
+/******************************************************************************************/
+
+std::string getJSONValue(std::string field, std::string src, std::string assign_operator) {
 	std::string ret = "";
 	int i, pos;
 	char c;
