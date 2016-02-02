@@ -30,9 +30,9 @@ Socket * server;
 /******************************************************************************************/
 
 void registerOnController();
-void start();
+void startServer();
 int findSession(std::vector<Session*>&, std::string);
-std::string getJSONValue(std::string, std::string, std::string);
+std::string getJSONValue(std::string, std::string);
 
 /******************************************************************************************/
 
@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
     );
 	
 	registerOnController();
-	start();
+	startServer();
 	
     return 0;
 }
@@ -176,16 +176,18 @@ void registerOnController() {
 	/*** sending request message ***/
 	EXIT_IF(socket->Send(buffer, size) < 0, "");
 
-	PRINT("Request start sent.");
+	free(buffer);
 	
-	memset(buffer, 0, size);
+	PRINT("Sending request...");
+	
+	buffer = (t_byte*) malloc(sizeof(t_byte) * Http::BufferSize::MAX);
+	memset(buffer, 0, Http::BufferSize::MAX);
 
-	/*** receiving response ***/
-	EXIT_IF(socket->Receive(buffer, size, 30) < 0, "");
+	/*** checking if request was accepted ***/
+	EXIT_IF(socket->Receive(buffer, Http::BufferSize::MAX, 30) < 0, "");
 	
 	PRINT("Processing response...");
 
-	/*** checking if request was accepted ***/
 	protocol->processResponse(buffer);
 
 	free(buffer);
@@ -196,7 +198,7 @@ void registerOnController() {
 
 /******************************************************************************************/
 
-void start() {
+void startServer() {
 	int head_size, json_size, packet_size;
 	std::vector<Session*> sessions;
 	Http * protocol = new Http();
@@ -214,7 +216,7 @@ void start() {
 
 		client = server->Accept();
 
-		Socket::readFrom(client, rcv_packet, Http::BufferSize::MAX, 0);
+		Socket::readFrom(client, rcv_packet, Http::BufferSize::MAX, 30);
 		
 		protocol->processRequest(rcv_packet);
 		
@@ -225,10 +227,10 @@ void start() {
 			bool accept = true;
 			json = aux.substr(aux.find("\r\n\r\n") + 4,  aux.length() - 1);
 			
-			id = getJSONValue("session_id", json, ":");
+			id = getJSONValue("session_id", json);
 
 			if(id.length() > 0) {
-				aux = getJSONValue("command", json, ":");
+				aux = getJSONValue("command", json);
 				json = "";
                 
 				if(aux.length() > 0) {
@@ -259,7 +261,7 @@ void start() {
 							
 						if(i >= 0) {
 							sessions.at(i)->stop();
-							//sessions.at(i)->~Session();
+							sessions.at(i)->~Session();
 							sessions.erase(sessions.begin() + i);
 						} else {
 							PRINT("[ERROR] Failed to close the session " + id + ". The session does not exist.");
@@ -324,7 +326,7 @@ int findSession(std::vector<Session*> &list, std::string id) {
 
 /******************************************************************************************/
 
-std::string getJSONValue(std::string field, std::string src, std::string assign_operator) {
+std::string getJSONValue(std::string field, std::string src) {
 	std::string ret = "";
 	int i, pos;
 	char c;
