@@ -163,21 +163,10 @@ std::string Http::genResponse(t_size filelen, std::string filetype, std::string 
                 msg = msg + "Cache-Control: public, max-age=0\r\n";
                 connection = "keep-alive";
 
-                type =  !filetype.compare("mpd") || !filetype.compare("m4s") ? "application/octet-stream" :
-                            !filetype.compare("json") ? "application/json; charset=UTF-8" :
-                                !filetype.compare("mp4") || !filetype.compare("webm") || !filetype.compare("ogg") ? type + "video/" + filetype :
-                                "";
-                                //!filetype.compare("html") || !filetype.compare("htm") ? type + "text/html; charset=UTF-8" :
-                                    //!filetype.compare("jpg") || !filetype.compare("png") || !filetype.compare("gif") ? type + "image/" + filetype :
-                                        //
-                                            //!filetype.compare("mp3") || !filetype.compare("acc") ? type + "audio/" + filetype :
-                                                //!filetype.compare("js") ? "application/javascript" :
-                                                    //!filetype.compare("ico") ? "image/x-icon" : "";
-                                                        //!filetype.compare("ico") ? "image/vnd.microsoft.icon" :
+                type = filetype;
             } else if(status == Http::Status::NOT_FOUND) {
                 resp = RPLY_NOT_FOUND;
-//              aux = "<center><br><br><font size=\"8\">404</font><br><font size=\"6\">NOT FOUND</font></center>";
-                aux = "<center background=\"#000000\"><img src=\"lost.png\"></img></center>";
+                aux = "<center><br><br><font size=\"8\">404</font><br><font size=\"6\">NOT FOUND</font></center>";
                 msg = msg + "x-content-type-options: nosniff\r\n";
                 type = "text/html; charset=UTF-8";
                 length = std::to_string(aux.length());

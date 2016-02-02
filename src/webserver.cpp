@@ -7,8 +7,6 @@ Webserver::Webserver(int svr_port, int dash_profile, Buffer **video_buffer, Buff
     this->v_dash_buffer = video_buffer;
     this->a_dash_buffer = audio_buffer;
     this->page_path = path;
-    this->sequential_read_buffer = is_sequential;
-    this->current = 0;
 }
 
 Webserver::~Webserver() {
@@ -22,10 +20,10 @@ bool Webserver::openConnection() {
     this->socket = new Socket(this->port);
     if(this->socket->Bind() < 0) {
         r = false;
-        PRINT("ERROR: Webserver bind error");
+        PRINT("\n[ERROR] Webserver bind error");
     }else if(this->socket->Listen(10) < 0) {
         r = false;
-        PRINT("ERROR: Webserver listen error");
+        PRINT("\n[ERROR] Webserver listen error");
     }
     
     return r;
@@ -42,7 +40,7 @@ void Webserver::start() {
         cl.detach();
     }
     
-    PRINT("Session closed!")
+    PRINT("[INFO] Session closed!")
 
     this->socket->Close();
 }
@@ -60,9 +58,9 @@ void Webserver::startClient(t_socket cl) {
     t_size headsize;
     Http * header = new Http();
     
-    //do {
-        if(Socket::readFrom(cl, rcv_packet, Http::BufferSize::MAX, 30) < 0);
-           // break;
+    do {
+        if(Socket::readFrom(cl, rcv_packet, Http::BufferSize::MAX, 30) < 1)
+           break;
 
         header->processRequest(rcv_packet);
         
@@ -85,13 +83,13 @@ void Webserver::startClient(t_socket cl) {
         if(file != NULL)
             memcpy(snd_packet + headsize, file->binary() + header->get_start_range_pos(), filesize - header->get_start_range_pos());
         
-        if(Socket::sendTo(cl, snd_packet, headsize + filesize) < 0);
-           // break;
+        if(Socket::sendTo(cl, snd_packet, headsize + filesize) < 1)
+            break;
         
         header->clear();
         free(snd_packet);
         memset(rcv_packet, 0, Http::BufferSize::MAX);
-    //} while(file != NULL); //while keep-alive
+    } while(file != NULL); //while keep-alive
     
     free(rcv_packet);
         
@@ -99,19 +97,17 @@ void Webserver::startClient(t_socket cl) {
 }
 
 VirtualFile * Webserver::getFile(std::string filename) {
-    std::string filetype = filename.substr(filename.rfind(".", filename.length() - 1) + 1, filename.length() - 1);
     VirtualFile * file = NULL;
-    std::string dashtypes = "m4smpdmp4";
     std::string rqstfile;
+	
+	int type;
+	std::string filetype = Http::getContentType(filename, &type);
     
-    if(filetype.length() > 0 && dashtypes.find(filetype) != std::string::npos) {
+    if(type == Http::ContentType::DASH) {
         if(this->dash_profile == Dash::Profile::LIVE) {
             file = this->readExternalBuffer(filename);
             return file;
         } else if(this->dash_profile == Dash::Profile::ON_DEMAND) {
-			//if(!filetype.compare("m4s"))
-				//filename = (filename.find("video") != std::string::npos ? "video" : "audio") + std::to_string(this->current) + "." + filetype;
-
             rqstfile = this->dash_path + filename;
         }
     } else {
@@ -122,9 +118,6 @@ VirtualFile * Webserver::getFile(std::string filename) {
     }
     
     file = this->readFile(rqstfile, filetype);
-	
-	if(file != NULL)
-		this->current++;
 
     return file;
 }

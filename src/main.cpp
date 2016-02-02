@@ -1,31 +1,25 @@
-#include "buffer.h"
-#include "datapacket.h"
-#include "datagramsocket.h"
-#include "mpegts.h"
-#include "webserver.h"
 #include "http.h"
+#include "session.h"
 #include "dash.h"
 #include <cstdio>
 #include <thread>
 #include <chrono>
 #include <vector>
-#include <session.h>
 
 /******************************************************************************************/
 
-std::string g_server_ip 		= "127.0.0.1";
+Socket*     g_server;
 int 		g_server_port 		= 8080;
 int 		g_initial_tcp_port 	= 8090;
 int 		g_initial_udp_port 	= 1234;
-std::string g_site_path 		= "./site";
 int 		g_dash_profile 		= 1; 				// 0 = live, 1 = on demand
+int 		g_controller_port 	= 8085;
+std::string g_server_ip 		= "127.0.0.1";
+std::string g_site_path 		= "./www";
 std::string g_dash_path 		= "./dash";
 std::string g_mpd_name			= "dash.mpd";
 std::string g_controller_ip 	= "127.0.0.1";
-int 		g_controller_port 	= 8080;
 std::string g_controller_url_path = "ArthronRest/api/dash_sessions";
-
-Socket * server;
 
 /******************************************************************************************/
 
@@ -50,7 +44,7 @@ int main(int argc, char *argv[]) {
             try {
                 g_server_port = std::stoi(arg, &sz);
             } catch(...) {
-                std::cout << "Invalid port entry." << std::endl;
+                EXIT_IF(true, "[ERROR] Invalid port entry.");
             }
 		} else if(!arg.compare("-initial-tcp-port")) {
 			arg = argv[++i];
@@ -58,7 +52,7 @@ int main(int argc, char *argv[]) {
 				try {
 					g_initial_tcp_port = std::stoi(arg, &sz);
 				} catch(...) {
-					std::cout << "Invalid initial tcp port entry." << std::endl;
+					EXIT_IF(true, "[ERROR] Invalid initial tcp port entry.");
 				}
 		} else if(!arg.compare("-initial-udp-port")) {
 			arg = argv[++i];
@@ -66,7 +60,7 @@ int main(int argc, char *argv[]) {
             try {
                 g_initial_udp_port = std::stoi(arg, &sz);
             } catch(...) {
-                std::cout << "Invalid initial udp port entry." << std::endl;
+                EXIT_IF(true, "[ERROR] Invalid initial udp port entry.");
             }
 		} else if(!arg.compare("-site-path")) {
 			g_site_path = argv[++i];
@@ -87,7 +81,7 @@ int main(int argc, char *argv[]) {
             try {
                 g_controller_port = std::stoi(arg, &sz);
             } catch(...) {
-                std::cout << "Invalid port format." << std::endl;
+                EXIT_IF(true, "[ERROR] Invalid port format.");
             }
 		} else if(!arg.compare("-controller-url-path")) {
 			g_controller_url_path = argv[++i];
@@ -96,32 +90,43 @@ int main(int argc, char *argv[]) {
 			
 			PRINT(
                 "Usage: " + arg + " [config options]\n\n\
-                    \r -ip <ip:str>                  IP of server machine\n\
-                    \r -port <port:int>              TCP port used to connect proxy server with\n\
-                    \r                               controller server\n\
-                    \r -initial-tcp-port <port:int>  Select the initial port used to new sessions\n\
-                    \r -initial-udp-port <port:int>  Select the initial port used to new sessions\n\
-                    \r -site-path <directory:str>    Location of directory of the site files\n\
-                    \r -live or -on-demand           Selects the profile dash to be used\n\
-                    \r -mpd <name:str>               Define the MPD name.\n\
-                    \r -dash-path <directory:str>    Location of directory of the dash files used in\n\
-                    \r                               on-demand profile\n\
-                    \r -controller-ip <ip:str>       IP of the session controllers\n\
-                    \r -controller-port <port:int>   Port of the session controllers\n\
-                    \r -controller-url-path <url-path:str>  The path of the controller used to\n\
-                    \r                               recongnize the server mensage\n"\
+                    \r  -ip <ip:str>                  IP of server machine\n\
+                    \r  -port <port:int>              TCP port used to connect proxy server with\n\
+                    \r                                controller server\n\
+                    \r  -initial-tcp-port <port:int>  Select the initial port used to new sessions\n\
+                    \r  -initial-udp-port <port:int>  Select the initial port used to new sessions\n\
+                    \r  -site-path <directory:str>    Location of directory of the site files\n\
+                    \r  -live or -on-demand           Selects the profile dash to be used\n\
+                    \r  -mpd <name:str>               Define the MPD name.\n\
+                    \r  -dash-path <directory:str>    Location of directory of the dash files used in\n\
+                    \r                                on-demand profile\n\
+                    \r  -controller-ip <ip:str>       IP of the session controllers\n\
+                    \r  -controller-port <port:int>   Port of the session controllers\n\
+                    \r  -controller-url-path <url-path:str>  The path of the controller used to\n\
+                    \r                                recongnize the server mensage\n\n\
+                    \rDefault settings:\n"              << \
+                    "\n\r  Server IP: \""               << g_server_ip          << "\""\
+                    "\n\r  Server Port: "               << g_server_port        << \
+                    "\n\r  Initial HTTP Session Port: " << g_initial_tcp_port   << \
+                    "\n\r  Initial UDP Session Port: "  << g_initial_udp_port   << \
+                    "\n\r  Site Directory: \""          << g_site_path          << "\"" << \
+                    "\n\r  Dash Profile: "              << (g_dash_profile == Dash::Profile::LIVE ? "live" : g_dash_profile == Dash::Profile::ON_DEMAND ? "on-demand" : "Invalid") << \
+                    "\n\r  MPD Name: "                  << g_mpd_name << \
+                    "\n\r  Dash Directory: \""          << g_dash_path          << "\"" << \
+                    "\n\r  Controller Server IP: \""    << g_controller_ip      << "\""\
+                    "\n\r  Controller Server Port: "    << g_controller_port    << \
+                    "\n\r  Controller URL Path: \""     << g_controller_url_path << "\"\n"\
             );
 			
 			return 0;
 		} else {
-			std::cout << "Invalid Parameter: " << argv[i] << std::endl;
-			return 1;
+			EXIT_IF(true, "[ERROR] Invalid Parameter: " << argv[i]);
 		}
 	}
 
 	PRINT(
-        "Starting with settings:\n"             << \
-            "\n\r  Server IP: "                 << g_server_ip          << \
+        "\nStarting with settings:\n"             << \
+            "\n\r  Server IP: \""               << g_server_ip          << "\""\
             "\n\r  Server Port: "               << g_server_port        << \
             "\n\r  Initial HTTP Session Port: " << g_initial_tcp_port   << \
             "\n\r  Initial UDP Session Port: "  << g_initial_udp_port   << \
@@ -129,7 +134,7 @@ int main(int argc, char *argv[]) {
             "\n\r  Dash Profile: "              << (g_dash_profile == Dash::Profile::LIVE ? "live" : g_dash_profile == Dash::Profile::ON_DEMAND ? "on-demand" : "Invalid") << \
             "\n\r  MPD Name: "                  << g_mpd_name << \
             "\n\r  Dash Directory: \""          << g_dash_path          << "\"" << \
-            "\n\r  Controller Server IP: "      << g_controller_ip      << \
+            "\n\r  Controller Server IP: \""    << g_controller_ip      << "\""\
             "\n\r  Controller Server Port: "    << g_controller_port    << \
             "\n\r  Controller URL Path: \""     << g_controller_url_path << "\"\n"\
     );
@@ -151,17 +156,17 @@ void registerOnController() {
 		std::this_thread::sleep_for (std::chrono::milliseconds(1000));
 	}
 	
-	PRINT("Connected to the controller.");
+	PRINT("[INFO] Connected to the controller.");
 	
 	/*** selecting server port ***/
-	server = new Socket(g_server_port);
+	g_server = new Socket(g_server_port);
 	
-	while(server->Bind() < 0 || server->Listen(10) < 0) {
-		server->setPort(++g_server_port);
-		PRINT("Server port changed to " << g_server_port);
+	while(g_server->Bind() < 0 || g_server->Listen(10) < 0) {
+		g_server->setPort(++g_server_port);
+		PRINT("[INFO] Server port changed to " << g_server_port);
 	}
 	
-	/*** preparing request message ***/
+	/*** preparing register message ***/
 	std::string json = "{\"session_id\" : \"init\", \"ip\" : \"" + g_server_ip + "\", \"port\" : \"" + std::to_string(g_server_port) + "\"}";
 	
 	std::string header = protocol->genRequest(g_controller_url_path, (t_size) json.length(), Http::ContentType::JSON, "*/*", g_controller_ip + ":" + std::to_string(g_controller_port), Http::Method::POST);
@@ -178,7 +183,7 @@ void registerOnController() {
 
 	free(buffer);
 	
-	PRINT("Sending request...");
+	PRINT("[INFO] Sending register request...");
 	
 	buffer = (t_byte*) malloc(sizeof(t_byte) * Http::BufferSize::MAX);
 	memset(buffer, 0, Http::BufferSize::MAX);
@@ -186,14 +191,14 @@ void registerOnController() {
 	/*** checking if request was accepted ***/
 	EXIT_IF(socket->Receive(buffer, Http::BufferSize::MAX, 30) < 0, "");
 	
-	PRINT("Processing response...");
+	PRINT("[INFO] Processing response...");
 
 	protocol->processResponse(buffer);
 
 	free(buffer);
 	socket->Close();
 
-	EXIT_IF(protocol->get_reply_status() != Http::Status::CREATED, "[ERROR] The server responded with status code " << protocol->get_reply_status());
+	//EXIT_IF(protocol->get_reply_status() != Http::Status::CREATED, "[ERROR] The controller server responded with status code " << protocol->get_reply_status());
 }
 
 /******************************************************************************************/
@@ -208,13 +213,13 @@ void startServer() {
 	t_byte * snd_packet;
 	t_socket client;
 
-	PRINT("Server started!\n Running on port: " << server->getPort());
+	PRINT("[INFO] Server started! Running on port: " << g_server->getPort());
 	
 	while(true) {
 		id = "";
 		json = "";
 
-		client = server->Accept();
+		client = g_server->Accept();
 
 		Socket::readFrom(client, rcv_packet, Http::BufferSize::MAX, 30);
 		
@@ -235,7 +240,7 @@ void startServer() {
                 
 				if(aux.length() > 0) {
 					if(aux.find("open") != std::string::npos) {
-						PRINT("Command received: Start " << id);
+						PRINT("[INFO] Command received: Start Session id:" << id);
 						
 						if(findSession(sessions, id) < 0) {
 							sessions.push_back(new Session(id, g_initial_udp_port++, 1000, g_initial_tcp_port++, g_site_path, g_dash_profile, g_dash_path, g_mpd_name));
@@ -251,11 +256,11 @@ void startServer() {
 							
 							json = "{\"ip\":\"" + g_server_ip + "\",\n\"udp\":\"" + std::to_string(sessions.back()->getUdpPort()) + "\",\n\"http\":\"" + std::to_string(sessions.back()->getHttpPort()) + "\", \"mpd_name\" : \"" + g_mpd_name + "\"}";
 						} else {
-							PRINT("[ERROR] Failed to open the Session " + id + ". The session already running.");
+							PRINT("\n[ERROR] Failed to open the Session " + id + ". The session already running.");
 							accept = false;
 						}
 					} else if(aux.find("close") != std::string::npos) {
-						PRINT("Command received: Close " << id);
+						PRINT("[INFO] Command received: Close Session id:" << id);
 							
 						int i = findSession(sessions, id);
 							
@@ -264,26 +269,26 @@ void startServer() {
 							sessions.at(i)->~Session();
 							sessions.erase(sessions.begin() + i);
 						} else {
-							PRINT("[ERROR] Failed to close the session " + id + ". The session does not exist.");
+							PRINT("\n[ERROR] Failed to close the session " + id + ". The session does not exist.");
 							accept = false;
 						}
 					} else {
-						PRINT("[ERROR] Invalid JSON received. Unrecognized command.");
+						PRINT("\n[ERROR] Invalid JSON received. Unrecognized command.");
 						accept = false;
 					}
 				} else {
-					PRINT("[ERROR] Invalid JSON received. Command not found.");
+					PRINT("\n[ERROR] Invalid JSON received. Command not found.");
 					accept = false;
 				}
 			} else {
-				PRINT("[ERROR] Invalid JSON received. Session ID not found.");
+				PRINT("\n[ERROR] Invalid JSON received. Session ID not found.");
 				accept = false;
 			}
 			
 			if(accept) header = protocol->genResponse(json.length(), "json", "", Http::Status::OK);
                 else header = protocol->genResponse(0, "", "", Http::Status::BAD_REQUEST);
 		} else {
-            PRINT("[ERROR] JSON not found.");
+            PRINT("\n[ERROR] JSON not found.");
             header = protocol->genResponse(0, "", "", Http::Status::NOT_FOUND);
         }
 
@@ -327,7 +332,7 @@ int findSession(std::vector<Session*> &list, std::string id) {
 /******************************************************************************************/
 
 std::string getJSONValue(std::string field, std::string src) {
-	std::string ret = "";
+	std::string value = "";
 	int i, pos;
 	char c;
 	
@@ -342,7 +347,7 @@ std::string getJSONValue(std::string field, std::string src) {
 					c = '\"';
 				} else if(c == '\"') {
 					for(i = i + 1; i < src.length() && src.at(i) != '\"'; i++) {
-						ret += src.at(i);
+						value += src.at(i);
 					}
 					
 					break;
@@ -352,6 +357,6 @@ std::string getJSONValue(std::string field, std::string src) {
 		}
 	}
 
-	return ret;
+	return value;
 }
 

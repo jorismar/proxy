@@ -20,7 +20,6 @@ class Session {
         Webserver * webserver;
         Buffer * video_dash_buffer;
         Buffer * audio_dash_buffer;
-    //  Dashcast * dashserver;
 
     
     public:
@@ -39,8 +38,6 @@ class Session {
         
         int getUdpPort();
         int getHttpPort();
-        
-        // implementar get ports
 };
 
 #endif

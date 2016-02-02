@@ -135,7 +135,7 @@ class Http {
         
     public:
         enum Method {GET, POST, PUT, PATCH, DELETE, COPY, HEAD, OPTIONS, LINK, UNLINK, PURGE};
-        enum ContentType {JSON, MP4, M4S, MPD, JS, JPG, PNG, GIF, OGG, WEBM, ICO, HTML, WAV, MP3};
+        enum ContentType {JSON, MP4, M4S, MPD, DASH, JS, JPG, PNG, GIF, OGG, WEBM, ICO, HTML, WAV, MP3, TEXT};
         enum Status {OK = 200, CREATED = 201, ACCEPTED = 202, PARTIAL_CONTENT = 206, NOT_MODIFIED = 304, BAD_REQUEST = 400, NOT_FOUND = 404, NOT_ACCEPTED = 406, NOT_IMPLEMENTED = 501};
         enum BufferSize {MAX = 1024000};
         
@@ -162,6 +162,61 @@ class Http {
         std::string genResponse(t_size, std::string, std::string, int);
         std::string genRequest(std::string, t_size, short, std::string, std::string, short);
         void clear();
+        
+        static std::string getContentType(std::string filename, int * ntype) {
+            std::string type;
+            std::string filetype = filename.substr(filename.rfind(".", filename.length() - 1) + 1, filename.length() - 1);
+        
+            if(!filetype.compare("m4s")) {
+                *ntype = Http::ContentType::DASH;
+                type = "application/octet-stream";
+            } else if(!filetype.compare("mpd")) {
+                *ntype = Http::ContentType::DASH;
+                type = "application/octet-stream";
+            } else if(!filetype.compare("mp4")) {
+                *ntype = Http::ContentType::DASH;
+                type = "video/mp4";
+            } else if(!filetype.compare("webm")) {
+                *ntype = Http::ContentType::WEBM;
+                type = "video/webm";
+            } else if(!filetype.compare("ogg")) {
+                *ntype = Http::ContentType::OGG;
+                type = "video/ogg";
+            } else if(!filetype.compare("json")) {
+                *ntype = Http::ContentType::JSON;
+                type = "application/json; charset=UTF-8";
+            } else if(!filetype.compare("js")) {
+                *ntype = Http::ContentType::JS;
+                type = "application/json; charset=UTF-8";
+            } else if(!filetype.compare("html")) {
+                *ntype = Http::ContentType::HTML;
+                type = "text/html; charset=UTF-8";
+            } else if(!filetype.compare("jpg")) {
+                *ntype = Http::ContentType::JPG;
+                type = "image/jpg";
+            } else if(!filetype.compare("png")) {
+                *ntype = Http::ContentType::PNG;
+                type = "image/png";
+            } else if(!filetype.compare("gif")) {
+                *ntype = Http::ContentType::GIF;
+                type = "image/gif";
+            } else if(!filetype.compare("ico")) {
+                *ntype = Http::ContentType::ICO;
+                type = "image/x-icon";
+            } else if(!filetype.compare("mp3")) {
+                *ntype = Http::ContentType::MP3;
+                type = "audio/mpeg";
+            } else if(!filetype.compare("wav")) {
+                *ntype = Http::ContentType::WAV;
+                type = "audio/wav";
+          //else if(!filetype.compare("ogg")) type = "audio/ogg";
+            } else {
+                *ntype = Http::ContentType::TEXT;
+                type = "text/html; charset=UTF-8";
+            }
+            
+            return type;
+        }
         
         static std::string getDate() {
             time_t rawtime;

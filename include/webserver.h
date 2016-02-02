@@ -30,8 +30,6 @@ class Webserver {
         bool alive;
         int port;
         int dash_profile;
-        bool sequential_read_buffer;    // if true, checking the name of the dash file will be ignored
-        t_pos current;
         
     public:
         Webserver(int, int, Buffer**, Buffer**, std::string, std::string, bool);
