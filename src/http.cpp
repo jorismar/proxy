@@ -73,31 +73,22 @@ void Http::processResponse(t_byte * header) {
     
     try {
         this->reply_status = std::stoi(this->getfield(msg, " ", ' '), NULL);
-    } catch(...) {}
+    } catch(...) {
+        PRINT("[ERROR] Could not read the reply status code")
+    }
 }
     
 void Http::processRequest(t_byte * header) {
     std::string msg(header);
     
     if(msg.find("GET") != std::string::npos) {
-        this->is_get_reqst  = true;
         this->reqst_file    = this->getfield(msg, "GET ", ' ');
         this->reqsttype     = Http::Method::GET;
     } else if(msg.find("POST") != std::string::npos) {
         this->reqst_file    = this->getfield(msg, "POST ", ' ');
         this->reqsttype     = Http::Method::POST;
-        this->content_type  = this->getfield(msg, "Content-Type: ", '\r'); // verificar se \r é encontrado
-        this->accpt         = this->getfield(msg, "Accept: ", '\n');
+        this->content_type  = this->getfield(msg, "Content-Type: ", '\r');
     }
-//  this->httpver    = this->getfield(msg, "HTTP/", '\n');
-//  this->host       = this->getfield(msg, "Host: ", '\n');
-//  this->user_agent = this->getfield(msg, "User-Agent: ", '\n');
-//  this->accpt      = this->getfield(msg, "Accept: ", '\n');
-//  this->accpt_lang = this->getfield(msg, "Accept-Language: ", '\n');
-//  this->referer    = this->getfield(msg, "Referer: ", '\n');
-//  this->connection = this->getfield(msg, "Connection: ", '\n');
-//  this->if_modifd_since = this->getfield(msg, "If-Modified-Since: ", '\n');
-//  this->if_none_match = this->getfield(msg, "If-None-Match: ", '\n');
     
     this->range[0] = -1;
     this->range[1] = -1;
@@ -118,12 +109,9 @@ void Http::processRequest(t_byte * header) {
             
             aux = this->getfield(msg, "Range: bytes=" + aux + '-', '\n');
             
-            //try {
-                try {
-                    this->range[1] = std::stoi(aux, &sz);
-                } catch(...) {}
-                //} catch(const std::invalid_argument& ex) {}
-            //} catch (const std::out_of_range& ex) {}
+            try {
+                this->range[1] = std::stoi(aux, &sz);
+            } catch(...) {}
         }
     }
 }
@@ -158,41 +146,39 @@ std::string Http::genResponse(t_size filelen, std::string filetype, std::string 
                     resp = RPLY_PARTIAL_CONTENT;
                 else this->range[0] = 0;
 
-                msg = msg + "Content-Range: bytes " + std::to_string(this->range[0]) + "-" + std::to_string(filelen - 1) + "/" + length + "\r\n";
-                msg = msg + "Accept-Ranges: bytes\r\n";
-                msg = msg + "Cache-Control: public, max-age=0\r\n";
+                msg += "Content-Range: bytes " + std::to_string(this->range[0]) + "-" + std::to_string(filelen) + "/" + length + "\r\n";
+                msg += "Accept-Ranges: bytes\r\n";
+                msg += "Cache-Control: public, max-age=0\r\n";
                 connection = "keep-alive";
 
                 type = filetype;
             } else if(status == Http::Status::NOT_FOUND) {
                 resp = RPLY_NOT_FOUND;
                 aux = "<center><br><br><font size=\"8\">404</font><br><font size=\"6\">NOT FOUND</font></center>";
-                msg = msg + "x-content-type-options: nosniff\r\n";
+                msg += "x-content-type-options: nosniff\r\n";
                 type = "text/html; charset=UTF-8";
                 length = std::to_string(aux.length());
                 connection = "close";
             } else if(status == Http::Status::NOT_ACCEPTED || status == Http::Status::BAD_REQUEST) {
                 resp = status == Http::Status::NOT_ACCEPTED ? RPLY_NOT_ACCEPTABLE : RPLY_BAD_REQUEST;
-                msg = msg + "Cache-Control: no-cache, no-store, max-age=0\r\n";
+                msg += "Cache-Control: no-cache, no-store, max-age=0\r\n";
                 connection = "close";
                 type = "text/html; charset=UTF-8";
             }
             
-            msg = msg + "Content-Type: "   + type            + "\r\n";
-            msg = msg + "Content-Length: " + length          + "\r\n";
+            msg += "Content-Type: "   + type            + "\r\n";
+            msg += "Content-Length: " + length          + "\r\n";
         }
     
-//      msg = msg + "Etag: "           + etag            + "\r\n";
-//      msg = msg + "Last-Modified: "  + last_modif_date + "\r\n";
-        msg = msg + "Connection: " + connection + "\r\n";
+        msg += "Connection: " + connection + "\r\n";
     } else {
         resp = RPLY_NOT_IMPLEMENTED;
     }
     
-    msg = msg + "Access-Control-Allow-Origin: *\r\n";
-    msg = msg + "Access-Control-Allow-Headers: X-Requested-With, Content-Type, X-Codingpedia, X-HTTP-Method-Override\r\n";
-    msg = msg + "Date: "           + this->getDate()     + "\r\n";
-    msg = msg + "X-Powered-By: "   + this->server_name   + "\r\n";
+    msg += "Access-Control-Allow-Origin: *\r\n";
+    msg += "Access-Control-Allow-Headers: X-Requested-With, Content-Type, X-Codingpedia, X-HTTP-Method-Override\r\n";
+    msg += "Date: "           + this->getDate()     + "\r\n";
+    msg += "X-Powered-By: "   + this->server_name   + "\r\n";
     
     return "HTTP/1.1 " + resp + "\r\n" + msg + "\r\n" + aux;
 }
@@ -201,21 +187,15 @@ std::string Http::genRequest(std::string filename, t_size filesize, short conten
     std::string msg;
     std::string content = content_type == Http::ContentType::JSON ? "application/json" : "text/html; charset=UTF-8";
     
-    if(headtype == Http::Method::GET) {
-        // NOT IMPLEMENTED YET
-    } else if(headtype == Http::Method::POST) {
-        msg = "POST /" + filename + " HTTP/1.1\r\n";
-        msg = msg + "Host: " + host + "\r\n";
-        msg = msg + "Connection: keep-alive\r\n";
-        msg = msg + "Content-Type: " + content + "\r\n";
-        msg = msg + "Content-Length: " + std::to_string(filesize) + "\r\n";
-    //  msg = msg + "User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.111 Safari/537.36\r\n";
-        msg = msg + "Cache-Control: no-cache\r\n";
-        msg = msg + "Accept: " + accept_type + "\r\n";
-    //  msg = msg + "DNT: 1\r\n";
-    //  msg = msg + "Accept-Encoding: gzip, deflate\r\n";
-    //  msg = msg + "Accept-Language: pt-BR,pt;q=0.8,en-US;q=0.6,en;q=0.4\r\n";
-    }
+    if(headtype == Http::Method::GET) msg = "GET /" + filename + " HTTP/1.1\r\n";
+        else if(headtype == Http::Method::POST) msg = "POST /" + filename + " HTTP/1.1\r\n";
+
+    msg += "Host: " + host + "\r\n";
+    msg += "Connection: keep-alive\r\n";
+    msg += "Content-Type: " + content + "\r\n";
+    msg += "Content-Length: " + std::to_string(filesize) + "\r\n";
+    msg += "Cache-Control: no-cache\r\n";
+    msg += "Accept: " + accept_type + "\r\n";
 
     return msg + "\r\n";
 }
@@ -223,7 +203,6 @@ std::string Http::genRequest(std::string filename, t_size filesize, short conten
 void Http::clear() {
     this->range[0]          = 0;
     this->range[1]          = 0;
-    this->is_get_reqst      = false;
     this->reqst_file        = "";
     this->httpver           = "";
     this->accpt             = "";

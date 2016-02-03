@@ -59,7 +59,7 @@ void Webserver::startClient(t_socket cl) {
     Http * header = new Http();
     
     do {
-        if(Socket::readFrom(cl, rcv_packet, Http::BufferSize::MAX, 30) < 1)
+        if(Socket::readFrom(cl, rcv_packet, Http::BufferSize::MAX, 5) < 1)
            break;
 
         header->processRequest(rcv_packet);

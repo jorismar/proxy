@@ -230,60 +230,66 @@ void startServer() {
 		if(isjson) {
 			std::string aux(rcv_packet);
 			bool accept = true;
-			json = aux.substr(aux.find("\r\n\r\n") + 4,  aux.length() - 1);
-			
-			id = getJSONValue("session_id", json);
 
-			if(id.length() > 0) {
-				aux = getJSONValue("command", json);
-				json = "";
-                
-				if(aux.length() > 0) {
-					if(aux.find("open") != std::string::npos) {
-						PRINT("[INFO] Command received: Start Session id:" << id);
-						
-						if(findSession(sessions, id) < 0) {
-							sessions.push_back(new Session(id, g_initial_udp_port++, 1000, g_initial_tcp_port++, g_site_path, g_dash_profile, g_dash_path, g_mpd_name));
+			try {
+				json = aux.substr(aux.find("\r\n\r\n") + 4,  aux.length() - 1);
+			
+				id = getJSONValue("session_id", json);
+
+				if(id.length() > 0) {
+					aux = getJSONValue("command", json);
+					json = "";
+					
+					if(aux.length() > 0) {
+						if(aux.find("open") != std::string::npos) {
+							PRINT("[INFO] Command received: Start Session id:" << id);
 							
-							while(!sessions.back()->bindUdpPort())
-								sessions.back()->setUdpPort(g_initial_udp_port++);
-							
-							while(!sessions.back()->bindHttpPort()) 
-								sessions.back()->setHttpPort(g_initial_tcp_port++);
-							
-							std::thread session([=](){sessions.back()->start(); return 1;});
-							session.detach();
-							
-							json = "{\"ip\":\"" + g_server_ip + "\",\n\"udp\":\"" + std::to_string(sessions.back()->getUdpPort()) + "\",\n\"http\":\"" + std::to_string(sessions.back()->getHttpPort()) + "\", \"mpd_name\" : \"" + g_mpd_name + "\"}";
+							if(findSession(sessions, id) < 0) {
+								sessions.push_back(new Session(id, g_initial_udp_port++, 1000, g_initial_tcp_port++, g_site_path, g_dash_profile, g_dash_path, g_mpd_name));
+								
+								while(!sessions.back()->bindUdpPort())
+									sessions.back()->setUdpPort(g_initial_udp_port++);
+								
+								while(!sessions.back()->bindHttpPort()) 
+									sessions.back()->setHttpPort(g_initial_tcp_port++);
+								
+								std::thread session([=](){sessions.back()->start(); return 1;});
+								session.detach();
+								
+								json = "{\"ip\":\"" + g_server_ip + "\",\n\"udp\":\"" + std::to_string(sessions.back()->getUdpPort()) + "\",\n\"http\":\"" + std::to_string(sessions.back()->getHttpPort()) + "\", \"mpd_name\" : \"" + g_mpd_name + "\"}";
+							} else {
+								PRINT("\n[ERROR] Failed to open the Session " + id + ". The session already running.");
+								accept = false;
+							}
+						} else if(aux.find("close") != std::string::npos) {
+							PRINT("[INFO] Command received: Close Session id:" << id);
+								
+							int i = findSession(sessions, id);
+								
+							if(i >= 0) {
+								sessions.at(i)->stop();
+								sessions.at(i)->~Session();
+								sessions.erase(sessions.begin() + i);
+							} else {
+								PRINT("\n[ERROR] Failed to close the session " + id + ". The session does not exist.");
+								accept = false;
+							}
 						} else {
-							PRINT("\n[ERROR] Failed to open the Session " + id + ". The session already running.");
-							accept = false;
-						}
-					} else if(aux.find("close") != std::string::npos) {
-						PRINT("[INFO] Command received: Close Session id:" << id);
-							
-						int i = findSession(sessions, id);
-							
-						if(i >= 0) {
-							sessions.at(i)->stop();
-							sessions.at(i)->~Session();
-							sessions.erase(sessions.begin() + i);
-						} else {
-							PRINT("\n[ERROR] Failed to close the session " + id + ". The session does not exist.");
+							PRINT("\n[ERROR] Invalid JSON received. Unrecognized command.");
 							accept = false;
 						}
 					} else {
-						PRINT("\n[ERROR] Invalid JSON received. Unrecognized command.");
+						PRINT("\n[ERROR] Invalid JSON received. Command not found.");
 						accept = false;
 					}
 				} else {
-					PRINT("\n[ERROR] Invalid JSON received. Command not found.");
+					PRINT("\n[ERROR] Invalid JSON received. Session ID not found.");
 					accept = false;
 				}
-			} else {
-				PRINT("\n[ERROR] Invalid JSON received. Session ID not found.");
+			} catch(...) {
 				accept = false;
-			}
+                PRINT("\n[ERROR] Invalid JSON received.");
+            }
 			
 			if(accept) header = protocol->genResponse(json.length(), "json", "", Http::Status::OK);
                 else header = protocol->genResponse(0, "", "", Http::Status::BAD_REQUEST);

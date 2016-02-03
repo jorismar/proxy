@@ -2,30 +2,25 @@
 <html>
     <head>
       <script src="dash.js"></script>
-
         <title>LaViD</title>
-
         <style> 
             video { width: auto; height: auto; }
             .center { margin: auto; display: block; }
         </style>
-
 	<link rel="shortcut icon" href="/lavid.ico">
-
     </head>
     <body onload="setupVideo()">
-
+        <!--video controls id="videoplayer" poster="lavid.png" class="center" src="video.mp4" type="video/mp4"></video-->
 	<video id="videoplayer" controls autoplay poster="lavid.png" class="center"></video>	
-
 	<script>
+		// setup the video element and attach it to the Dash player
 		function setupVideo() {
-		  var url = "http://192.168.15.128:8090/video.mpd";
+		  var url = "http://192.168.15.128:3000/fragments/video.mpd";
 		  var context = new Dash.di.DashContext();
 		  var player = new MediaPlayer(context);
-
-		  player.startup();
-		  player.attachView(document.querySelector("#videoplayer"));
-		  player.attachSource(url);
+				  player.startup();
+				  player.attachView(document.querySelector("#videoplayer"));
+				  player.attachSource(url);
 		}
 	</script>
     </body>
