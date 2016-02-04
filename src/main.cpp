@@ -1,6 +1,7 @@
 #include "http.h"
 #include "session.h"
 #include "dash.h"
+#include "util.h"
 #include <cstdio>
 #include <thread>
 #include <chrono>
@@ -118,6 +119,8 @@ int main(int argc, char *argv[]) {
                     "\n\r  Controller URL Path: \""     << g_controller_url_path << "\"\n"\
             );
 			
+			// add -on-the-fly e -buffer-size
+			
 			return 0;
 		} else {
 			EXIT_IF(true, "[ERROR] Invalid Parameter: " << argv[i]);
@@ -125,14 +128,14 @@ int main(int argc, char *argv[]) {
 	}
 
 	PRINT(
-        "\nStarting with settings:\n"             << \
+        "\nStarting with settings:\n"           << \
             "\n\r  Server IP: \""               << g_server_ip          << "\""\
             "\n\r  Server Port: "               << g_server_port        << \
             "\n\r  Initial HTTP Session Port: " << g_initial_tcp_port   << \
             "\n\r  Initial UDP Session Port: "  << g_initial_udp_port   << \
             "\n\r  Site Directory: \""          << g_site_path          << "\"" << \
             "\n\r  Dash Profile: "              << (g_dash_profile == Dash::Profile::LIVE ? "live" : g_dash_profile == Dash::Profile::ON_DEMAND ? "on-demand" : "Invalid") << \
-            "\n\r  MPD Name: "                  << g_mpd_name << \
+            "\n\r  MPD Name: "                  << g_mpd_name 			<< \
             "\n\r  Dash Directory: \""          << g_dash_path          << "\"" << \
             "\n\r  Controller Server IP: \""    << g_controller_ip      << "\""\
             "\n\r  Controller Server Port: "    << g_controller_port    << \
@@ -148,6 +151,7 @@ int main(int argc, char *argv[]) {
 /******************************************************************************************/
 
 void registerOnController() {
+	t_byte * buffer;
 	Http * protocol = new Http();
 	Socket * socket = new Socket();
 	
@@ -169,20 +173,13 @@ void registerOnController() {
 	/*** preparing register message ***/
 	std::string json = "{\"session_id\" : \"init\", \"ip\" : \"" + g_server_ip + "\", \"port\" : \"" + std::to_string(g_server_port) + "\"}";
 	
-	std::string header = protocol->genRequest(g_controller_url_path, (t_size) json.length(), Http::ContentType::JSON, "*/*", g_controller_ip + ":" + std::to_string(g_controller_port), Http::Method::POST);
+	protocol->createRequestHeader(g_controller_url_path, (t_size) json.length(), Http::content_type_to_str(Http::ContentType::JSON), g_controller_ip + ":" + std::to_string(g_controller_port), Http::Method::POST);
 	
-	int size = header.length() + json.length();
-	
-	t_byte * buffer = (t_byte*) malloc(sizeof(t_byte) * size);
-	
-	memcpy(buffer, header.c_str(), header.length());
-	memcpy(buffer + header.length(), json.c_str(), json.length());
+	protocol->createBinaryPacket((t_byte*) json.c_str(), json.length());
 	
 	/*** sending request message ***/
-	EXIT_IF(socket->Send(buffer, size) < 0, "");
+	EXIT_IF(socket->Send(protocol->getBinaryPacket(), protocol->getBinarySize()) < 0, "");
 
-	free(buffer);
-	
 	PRINT("[INFO] Sending register request...");
 	
 	buffer = (t_byte*) malloc(sizeof(t_byte) * Http::BufferSize::MAX);
@@ -191,6 +188,7 @@ void registerOnController() {
 	/*** checking if request was accepted ***/
 	EXIT_IF(socket->Receive(buffer, Http::BufferSize::MAX, 30) < 0, "");
 	
+	
 	PRINT("[INFO] Processing response...");
 
 	protocol->processResponse(buffer);
@@ -198,50 +196,43 @@ void registerOnController() {
 	free(buffer);
 	socket->Close();
 
-	//EXIT_IF(protocol->get_reply_status() != Http::Status::CREATED, "[ERROR] The controller server responded with status code " << protocol->get_reply_status());
+	EXIT_IF(protocol->get_reply_status() != Http::Status::CREATED, "[ERROR] The controller server responded with status code " << protocol->get_reply_status());
 }
 
 /******************************************************************************************/
 
 void startServer() {
-	int head_size, json_size, packet_size;
+	int buffsize, head_size, json_size, packet_size;
 	std::vector<Session*> sessions;
 	Http * protocol = new Http();
 	std::string header, id, json;
 	bool isjson;
-	t_byte * rcv_packet = (t_byte*) malloc(sizeof(t_byte) * Http::BufferSize::MAX);
-	t_byte * snd_packet;
+	t_byte * buffer = (t_byte*) malloc(sizeof(t_byte) * Http::BufferSize::MAX);
 	t_socket client;
 
 	PRINT("[INFO] Server started! Running on port: " << g_server->getPort());
 	
 	while(true) {
-		id = "";
-		json = "";
-
 		client = g_server->Accept();
 
-		Socket::readFrom(client, rcv_packet, Http::BufferSize::MAX, 30);
+		Socket::readFrom(client, buffer, Http::BufferSize::MAX, 30);
 		
-		protocol->processRequest(rcv_packet);
+		protocol->processRequest(buffer);
 		
-		isjson = protocol->get_content_type() == Http::ContentType::JSON;
-		
-		if(isjson) {
-			std::string aux(rcv_packet);
+		if(protocol->get_content_type() == Http::ContentType::JSON) {
+			std::string id, json(buffer);
 			bool accept = true;
-
+			
 			try {
-				json = aux.substr(aux.find("\r\n\r\n") + 4,  aux.length() - 1);
+				json = json.substr(json.find("\r\n\r\n") + 4,  json.length() - 1);
 			
 				id = getJSONValue("session_id", json);
 
 				if(id.length() > 0) {
-					aux = getJSONValue("command", json);
-					json = "";
+					json = getJSONValue("command", json);
 					
-					if(aux.length() > 0) {
-						if(aux.find("open") != std::string::npos) {
+					if(json.length() > 0) {
+						if(!json.compare("open")) {
 							PRINT("[INFO] Command received: Start Session id:" << id);
 							
 							if(findSession(sessions, id) < 0) {
@@ -261,7 +252,7 @@ void startServer() {
 								PRINT("\n[ERROR] Failed to open the Session " + id + ". The session already running.");
 								accept = false;
 							}
-						} else if(aux.find("close") != std::string::npos) {
+						} else if(json.find("close") != std::string::npos) {
 							PRINT("[INFO] Command received: Close Session id:" << id);
 								
 							int i = findSession(sessions, id);
@@ -287,37 +278,31 @@ void startServer() {
 					accept = false;
 				}
 			} catch(...) {
-				accept = false;
                 PRINT("\n[ERROR] Invalid JSON received.");
+				accept = false;
             }
 			
-			if(accept) header = protocol->genResponse(json.length(), "json", "", Http::Status::OK);
-                else header = protocol->genResponse(0, "", "", Http::Status::BAD_REQUEST);
+			if(accept) {
+				protocol->createResponseHeader(json.length(), Http::content_type_to_str(Http::ContentType::JSON), Http::Status::OK);
+				protocol->createBinaryPacket((t_byte*) json.c_str(), json.length());
+			} else {
+				protocol->createResponseHeader(0, "", Http::Status::BAD_REQUEST);
+				protocol->createBinaryPacket(NULL, 0);
+			}
 		} else {
             PRINT("\n[ERROR] JSON not found.");
-            header = protocol->genResponse(0, "", "", Http::Status::NOT_FOUND);
+            protocol->createResponseHeader(0, "", Http::Status::BAD_REQUEST);
+			protocol->createBinaryPacket(NULL, 0);
         }
-
-		head_size = header.length();
-		json_size = json.length();
-		packet_size = head_size + json_size;
-		
-		snd_packet = (t_byte*) malloc(sizeof(t_byte) * packet_size);
-		
-		memcpy(snd_packet, header.c_str(), head_size);
-		
-		if(isjson)
-			memcpy(snd_packet + head_size, json.c_str(), json_size);
 			
-		Socket::sendTo(client, snd_packet, packet_size);
+		Socket::sendTo(client, protocol->getBinaryPacket(), protocol->getBinarySize());
 
 		Socket::Close(client);
 
-		memset(rcv_packet, 0, Http::BufferSize::MAX);
-		free(snd_packet);
+		memset(buffer, 0, Http::BufferSize::MAX);
 	}
 
-	free(rcv_packet);
+	free(buffer);
 }
 
 /******************************************************************************************/

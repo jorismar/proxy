@@ -70,15 +70,12 @@
 #include <string>
 #include <cstring>
 #include <cstdlib>
-#include <ctime>
 #include <stdexcept>
-#include "types.h"
-#include "datapacket.h"
+#include "util.h"
 
 class Http {
     private:
         int range[2];
-        bool is_get_reqst;
         std::string reqst_file;
         std::string server_name;
         std::string httpver;
@@ -132,10 +129,15 @@ class Http {
         
         short reqsttype;
         int reply_status;
+        int current_type;
+        
+        std::string header;
+        t_byte * buffer;
+        int buffer_size;
         
     public:
-        enum Method {GET, POST, PUT, PATCH, DELETE, COPY, HEAD, OPTIONS, LINK, UNLINK, PURGE};
-        enum ContentType {JSON, MP4, M4S, MPD, DASH, JS, JPG, PNG, GIF, OGG, WEBM, ICO, HTML, WAV, MP3, TEXT};
+        enum Method {GET, POST, PUT, PATCH, DELETE, COPY, HEAD, OPTIONS, LINK, UNLINK, PURGE, RESPONSE};
+        enum ContentType {JPG, PNG, GIF, ICO, MP4, OGG, WEBM, AUDIO_MP4, AUDIO_OGG, WAV, MP3, JS, JSON, TEXT, HTML, OCTET_STREAM, DASH};
         enum Status {OK = 200, CREATED = 201, ACCEPTED = 202, PARTIAL_CONTENT = 206, NOT_MODIFIED = 304, BAD_REQUEST = 400, NOT_FOUND = 404, NOT_ACCEPTED = 406, NOT_IMPLEMENTED = 501};
         enum BufferSize {MAX = 1024000};
         
@@ -153,17 +155,29 @@ class Http {
         std::string get_accepted_encoding();
         int get_reply_status();
         int get_content_type();
+        std::string get_str_content_type();
         
         void setServerName(std::string);
+        t_size getBinarySize();
+        t_byte * getBinaryPacket();
+        std::string getHeader();
         
         void processRequest(t_byte*);
         void processResponse(t_byte*);
-        std::string genResponse(int);
-        std::string genResponse(t_size, std::string, std::string, int);
-        std::string genRequest(std::string, t_size, short, std::string, std::string, short);
+        
+        std::string createResponseHeader(t_size, std::string, int);
+        std::string createRequestHeader(std::string, t_size, std::string, std::string, short);
+        
+        t_byte* createBinaryPacket(t_byte*, t_size);
+        
         void clear();
         
-        static std::string getContentType(std::string filename, int * ntype) {
+        /**
+         * Convert the file extension type to the HTTP Content-Type field format.
+         *
+         *
+         */
+        static std::string filename_to_content_type(std::string filename, int * ntype) {
             std::string type;
             std::string filetype = filename.substr(filename.rfind(".", filename.length() - 1) + 1, filename.length() - 1);
         
@@ -187,7 +201,7 @@ class Http {
                 type = "application/json; charset=UTF-8";
             } else if(!filetype.compare("js")) {
                 *ntype = Http::ContentType::JS;
-                type = "application/json; charset=UTF-8";
+                type = "application/javascript; charset=UTF-8";
             } else if(!filetype.compare("html")) {
                 *ntype = Http::ContentType::HTML;
                 type = "text/html; charset=UTF-8";
@@ -209,7 +223,6 @@ class Http {
             } else if(!filetype.compare("wav")) {
                 *ntype = Http::ContentType::WAV;
                 type = "audio/wav";
-          //else if(!filetype.compare("ogg")) type = "audio/ogg";
             } else {
                 *ntype = Http::ContentType::TEXT;
                 type = "text/html; charset=UTF-8";
@@ -218,17 +231,74 @@ class Http {
             return type;
         }
         
-        static std::string getDate() {
-            time_t rawtime;
-            struct tm * timeinfo;
-            char buffer [80];
+        static int content_type_to_int(std::string type) {
+            if(type.find("application/json") != std::string::npos)
+                return Http::ContentType::JSON;
+            else if(type.find("application/octet-stream") != std::string::npos)
+                return Http::ContentType::OCTET_STREAM;
+            else if(type.find("application/javascript") != std::string::npos)
+                return Http::ContentType::JS;
+            else if(type.find("text/html") != std::string::npos)
+                return Http::ContentType::TEXT;
+            else if(type.find("video/mp4") != std::string::npos)
+                return Http::ContentType::MP4;
+            else if(type.find("video/webm") != std::string::npos)
+                return Http::ContentType::WEBM;
+            else if(type.find("video/ogg") != std::string::npos)
+                return Http::ContentType::OGG;
+            else if(type.find("image/jpg") != std::string::npos)
+                return Http::ContentType::JPG;
+            else if(type.find("image/png") != std::string::npos)
+                return Http::ContentType::PNG;
+            else if(type.find("image/gif") != std::string::npos)
+                return Http::ContentType::GIF;
+            else if(type.find("image/x-icon") != std::string::npos)
+                return Http::ContentType::ICO;
+            else if(type.find("audio/mp4") != std::string::npos)
+                return Http::ContentType::AUDIO_MP4;
+            else if(type.find("audio/ogg") != std::string::npos)
+                return Http::ContentType::AUDIO_OGG;
+            else if(type.find("audio/mpeg") != std::string::npos)
+                return Http::ContentType::MP3;
+            else if(type.find("audio/wav") != std::string::npos)
+                return Http::ContentType::WAV;
             
-            time (&rawtime);
-            timeinfo = localtime (&rawtime);
-            
-            strftime (buffer, 80,"%a, %d %b %Y %T %Z", timeinfo);
-            
-            return std::string(buffer);
+            return -1;
+        }
+        
+        static std::string content_type_to_str(int type) {
+            if(type == Http::ContentType::JPG)
+                return "image/jpg";
+            else if(type == Http::ContentType::PNG)
+                return "image/png";
+            else if(type == Http::ContentType::GIF)
+                return "image/gif";
+            else if(type == Http::ContentType::ICO)
+                return "image/x-icon";
+            else if(type == Http::ContentType::MP4)
+                return "video/mp4";
+            else if(type == Http::ContentType::OGG)
+                return "video/ogg";
+            else if(type == Http::ContentType::WEBM)
+                return "video/webm";
+            else if(type == Http::ContentType::AUDIO_MP4)
+                return "audio/mp4";
+            else if(type == Http::ContentType::AUDIO_OGG)
+                return "audio/ogg";
+            else if(type == Http::ContentType::WAV)
+                return "audio/wav";
+            else if(type == Http::ContentType::MP3)
+                return "audio/mpeg";
+            else if(type == Http::ContentType::JS)
+                return "application/javascript; charset=UTF-8";
+            else if(type == Http::ContentType::TEXT || type == Http::ContentType::HTML)
+                return "text/html; charset=UTF-8";
+            else if(type == Http::ContentType::JSON)
+                return "application/json; charset=UTF-8";
+            else if(type == Http::ContentType::OCTET_STREAM)
+                return "application/octet-stream";
+        
+            return "";
         }
 };
 

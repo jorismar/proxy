@@ -8,10 +8,9 @@
 #include <cstdio>
 #include <cstddef>
 
-#include "datapacket.h"
 #include "buffer.h"
 #include "socket.h"
-#include "types.h"
+#include "util.h"
 #include "virtualfile.h"
 #include "http.h"
 #include "dash.h"
@@ -43,6 +42,7 @@ class Webserver {
         VirtualFile* readFile(std::string, std::string);
         VirtualFile* readExternalBuffer(std::string);
         void startClient(t_socket);
+        void startTest(t_socket);
         
         void setPort(int);
 };

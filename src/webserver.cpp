@@ -51,47 +51,35 @@ void Webserver::stop() {
 
 void Webserver::startClient(t_socket cl) {
     VirtualFile * file;
-    std::string hder;
-    t_size filesize;
-    t_byte * rcv_packet = (t_byte*) malloc(sizeof(t_byte) * Http::BufferSize::MAX);
-    t_byte * snd_packet;
-    t_size headsize;
+    t_byte * buffer = (t_byte*) malloc(sizeof(t_byte) * Http::BufferSize::MAX);
     Http * header = new Http();
     
-    do {
-        if(Socket::readFrom(cl, rcv_packet, Http::BufferSize::MAX, 5) < 1)
-           break;
+    //do {
+        /*if(*/Socket::readFrom(cl, buffer, Http::BufferSize::MAX, 5)/* < 1)*/;
+           //break;
 
-        header->processRequest(rcv_packet);
+        header->processRequest(buffer);
         
         file = this->getFile(header->get_reqsted_file());
         
         if(file != NULL) {
-            filesize = file->size();
-            hder = header->genResponse(filesize, file->filetype(), file->filemodified_date(), Http::Status::OK);
+            header->createResponseHeader(file->size(), file->filetype(), Http::Status::OK);
+            header->createBinaryPacket(file->binary(), file->size());
         } else {
-            filesize = 0;
-            hder = header->genResponse(0, "", "", Http::Status::NOT_FOUND);
+            header->createResponseHeader(0, "", Http::Status::NOT_FOUND);
+            header->createBinaryPacket(NULL, 0);
         }
         
-        headsize = hder.length();
-        
-        snd_packet = (t_byte*) malloc(sizeof(t_byte) * (headsize + filesize));
-        
-        memcpy(snd_packet, hder.c_str(), headsize);
-        
+        /*if(*/Socket::sendTo(cl, header->getBinaryPacket(), header->getBinarySize())/* < 1)*/;
+            //break;
         if(file != NULL)
-            memcpy(snd_packet + headsize, file->binary() + header->get_start_range_pos(), filesize - header->get_start_range_pos());
+            file->~VirtualFile();
         
-        if(Socket::sendTo(cl, snd_packet, headsize + filesize) < 1)
-            break;
-        
-        header->clear();
-        free(snd_packet);
-        memset(rcv_packet, 0, Http::BufferSize::MAX);
-    } while(file != NULL); //while keep-alive
+        header->~Http();
+        //memset(buffer, 0, Http::BufferSize::MAX);
+    //} while(file != NULL); //while keep-alive
     
-    free(rcv_packet);
+    free(buffer);
         
     Socket::Close(cl);
 }
@@ -101,7 +89,7 @@ VirtualFile * Webserver::getFile(std::string filename) {
     std::string rqstfile;
 	
 	int type;
-	std::string filetype = Http::getContentType(filename, &type);
+	std::string filetype = Http::filename_to_content_type(filename, &type);
     
     if(type == Http::ContentType::DASH) {
         if(this->dash_profile == Dash::Profile::LIVE) {
@@ -140,10 +128,12 @@ VirtualFile * Webserver::readFile(std::string path, std::string filetype) {
 
     count = fread(bin, 1, fsize, pfile);
     
-    vfile = new VirtualFile(path, filetype, Http::getDate(), bin, count);
+    vfile = new VirtualFile(path, filetype, "", bin, count);
 
     fclose(pfile);
-        
+    
+    free(bin);
+
     return vfile;
 }
 

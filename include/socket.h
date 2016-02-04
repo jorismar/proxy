@@ -4,8 +4,7 @@
 #include <cstring>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include "datapacket.h"
-#include "types.h"
+#include "util.h"
 
 class Socket {
     private:
@@ -30,7 +29,7 @@ class Socket {
         int Connect(std::string, int);
         int Read(t_byte*, t_size);
         int Send(t_byte*, t_size);
-        int Response(t_byte*, t_size);
+        int Reply(t_byte*, t_size);
         int Receive(t_byte*, t_size, int);
         void Close();
         void CloseServer();

@@ -3,7 +3,8 @@
 DatagramSocket::DatagramSocket(int port) {
     this->svr_socket    = socket(AF_INET, SOCK_DGRAM, 0);
     
-    EXIT_IF(svr_socket < 0, "ERROR: Failed to open socket.");
+    if(svr_socket < 0)
+        perror("ERROR on open socket");
     
     this->svr_address   = "";
     this->svr_port      = port;
@@ -13,7 +14,8 @@ DatagramSocket::DatagramSocket(int port) {
 DatagramSocket::DatagramSocket(std::string address, int port) {
     this->svr_socket    = socket(AF_INET, SOCK_DGRAM, 0);
     
-    EXIT_IF(svr_socket < 0, "ERROR: Failed to open socket.");
+    if(svr_socket < 0)
+        perror("ERROR on open socket");
     
     this->svr_address   = address;
     this->svr_port      = port;
@@ -21,11 +23,11 @@ DatagramSocket::DatagramSocket(std::string address, int port) {
 }
 
 DatagramSocket::~DatagramSocket() {
-    // VAZIO
+    close(this->svr_socket);
 }
 
 int DatagramSocket::Bind() {
-    int ret;
+    int r;
     
     //bzero((char*) &this->svr_addr, sizeof(this->svr_addr));
     memset((char*) &this->svr_addr, 0, sizeof(this->svr_addr));
@@ -33,25 +35,33 @@ int DatagramSocket::Bind() {
     this->svr_addr.sin_family = AF_INET;//AF_UNSPEC
     this->svr_addr.sin_port = htons(this->svr_port);
     
-    if(strlen(this->svr_address.c_str()) == 0)
+    if(this->svr_address.length() == 0)
         this->svr_addr.sin_addr.s_addr = INADDR_ANY; // localhost server
     else 
         inet_pton(AF_INET, this->svr_address.c_str(), &this->svr_addr.sin_addr); // remote server
  
-    ret = bind(this->svr_socket, (struct sockaddr*) &this->svr_addr, sizeof(this->svr_addr));
+    r = bind(this->svr_socket, (struct sockaddr*) &this->svr_addr, sizeof(this->svr_addr));
     
-    EXIT_IF(ret < 0, "ERROR on binding");
+    if(r < 0)
+        perror("ERROR on binding");
     
-    return ret;
+    return r;
 }
 
-int DatagramSocket::receive(DataPacket* packet) {
-    return recvfrom(this->svr_socket, packet->get(), packet->size(), 0, (struct sockaddr *) &this->from_addr, &this->from_addrlen);
+int DatagramSocket::Receive(t_byte* data, t_size length) {
+    int r;
+    
+    r = recvfrom(this->svr_socket, data, length, 0, (struct sockaddr *) &this->from_addr, &this->from_addrlen);
+    
+    if(r < 0)
+        perror("ERROR on receive");
+        
+    return r;
 }
 
-int DatagramSocket::send(DataPacket* packet, std::string address, int port) {
+int DatagramSocket::SendTo(t_byte* data, t_size length, std::string address, int port) {
     struct sockaddr_in toaddr;
-    int toaddrlen = sizeof(toaddr);
+    int r, toaddrlen = sizeof(toaddr);
     
     memset((char*) &toaddr, 0, toaddrlen);
 
@@ -59,15 +69,34 @@ int DatagramSocket::send(DataPacket* packet, std::string address, int port) {
     inet_pton(AF_INET, address.c_str(), &toaddr.sin_addr);
     toaddr.sin_port = htons(port);
 
-    return sendto(this->svr_socket, packet->get(), packet->size(), 0, (struct sockaddr *) &toaddr, toaddrlen);
+    r = sendto(this->svr_socket, data, length, 0, (struct sockaddr *) &toaddr, toaddrlen);
+    
+    if(r < 0)
+        perror("ERROR on send");
+        
+    return r;
 }
 
-int DatagramSocket::sendtoclient(DataPacket * packet) {
-    return sendto(this->svr_socket, packet->get(), packet->size(), 0, (struct sockaddr *) &this->to_addr, this->to_addrlen);
+int DatagramSocket::Send(t_byte* data, t_size length) {
+    int r;
+    
+    r = sendto(this->svr_socket, data, length, 0, (struct sockaddr *) &this->to_addr, this->to_addrlen);
+    
+    if(r < 0)
+        perror("ERROR on send to client");
+        
+    return r;
 }
 
-int DatagramSocket::reply(DataPacket* packet) {
-    return sendto(this->svr_socket, packet->get(), packet->size(), 0, (struct sockaddr *) &from_addr, from_addrlen);
+int DatagramSocket::Reply(t_byte* data, t_size length) {
+    int r;
+    
+    r = sendto(this->svr_socket, data, length, 0, (struct sockaddr *) &from_addr, from_addrlen);
+    
+    if(r < 0)
+        perror("ERROR on reply");
+        
+    return r;
 }
 
 void DatagramSocket::Close() {

@@ -84,7 +84,7 @@ int Socket::Send(t_byte * data, t_size length) {
     return send(this->svr_socket, data, length, 0);
 }
 
-int Socket::Response(t_byte * data, t_size length) {
+int Socket::Reply(t_byte * data, t_size length) {
     return send(this->cl_socket, data, length, 0);
 }
 

@@ -4,8 +4,7 @@
 #include <cstring>
 #include <unistd.h>
 #include <arpa/inet.h>
-
-#include "datapacket.h"
+#include "util.h"
 
 class DatagramSocket {
     private:
@@ -20,18 +19,16 @@ class DatagramSocket {
         socklen_t to_addrlen;
         socklen_t from_addrlen;
         
-        DataPacket* packet;
-        
     public:
         DatagramSocket(int);
         DatagramSocket(std::string, int);
         virtual ~DatagramSocket();
         
         int Bind();
-        int receive(DataPacket*);
-        int send(DataPacket*, std::string, int);
-        int sendtoclient(DataPacket*);
-        int reply(DataPacket*);
+        int Receive(t_byte*, t_size);
+        int SendTo(t_byte*, t_size, std::string, int);
+        int Send(t_byte*, t_size);
+        int Reply(t_byte*, t_size);
         void Close();
 
         int getPort();

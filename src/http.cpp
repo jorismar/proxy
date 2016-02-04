@@ -1,59 +1,114 @@
 #include "http.h"
 
+/******************************************************************************************/
+
 Http::Http() {
-    //this->clear();
+    this->current_type      = -1;
+    this->buffer            = NULL;
     this->server_name       = "Lavid/Jorismar";
 }
 
+/******************************************************************************************/
+
 Http::~Http() {
-    // NOT IMPLEMENTED
+    if(this->buffer != NULL)
+        free(buffer);
 }
+
+/******************************************************************************************/
 
 int Http::get_start_range_pos() {
     return this->range[0];
 }
 
+/******************************************************************************************/
+
 int Http::get_end_range_pos() {
     return this->range[1];
 }
+
+/******************************************************************************************/
 
 std::string Http::get_connection_state() {
     return this->connection;
 }
 
+/******************************************************************************************/
+
 std::string Http::get_reqsted_file() {
     return this->reqst_file;
 }
+
+/******************************************************************************************/
 
 std::string Http::get_referer() {
     return this->referer;
 }
 
+/******************************************************************************************/
+
 std::string Http::get_user_agent() {
     return this->user_agent;
 }
+
+/******************************************************************************************/
 
 std::string Http::get_accepted_types() {
     return this->accpt;
 }
 
+/******************************************************************************************/
+
 std::string Http::get_accepted_encoding() {
     return this->accpt_encoding;
 }
+
+/******************************************************************************************/
 
 int Http::get_reply_status() {
     return reply_status;
 }
 
+/******************************************************************************************/
+
 int Http::get_content_type() {
-    if(this->content_type.find("application/json")  != std::string::npos)
-        return Http::ContentType::JSON;
-    else return -1;
+    if(this->current_type < 0)
+        this->current_type = Http::content_type_to_int(this->content_type);
+    
+    return this->current_type;
 }
+
+/******************************************************************************************/
+
+std::string Http::get_str_content_type() {
+    return this->content_type;
+}
+
+/******************************************************************************************/
 
 void Http::setServerName(std::string name) {
     this->server_name = name;
 }
+
+/******************************************************************************************/
+
+t_size Http::getBinarySize() {
+    return this->buffer_size;
+}
+
+/******************************************************************************************/
+
+t_byte * Http::getBinaryPacket() {
+    return this->buffer;
+}
+
+/******************************************************************************************/
+
+std::string Http::getHeader() {
+    return this->header;
+}
+
+/******************************************************************************************/
 
 std::string Http::getfield(std::string src, std::string mark, char sep) {
     int src_size = src.length(), mark_start_pos = src.find(mark);
@@ -68,6 +123,8 @@ std::string Http::getfield(std::string src, std::string mark, char sep) {
     return value;    
 }
 
+/******************************************************************************************/
+
 void Http::processResponse(t_byte * header) {
     std::string msg(header);
     
@@ -78,6 +135,8 @@ void Http::processResponse(t_byte * header) {
     }
 }
     
+/******************************************************************************************/
+
 void Http::processRequest(t_byte * header) {
     std::string msg(header);
     
@@ -93,37 +152,35 @@ void Http::processRequest(t_byte * header) {
     this->range[0] = -1;
     this->range[1] = -1;
 
-    {
-        std::string aux;
-        std::string::size_type sz;
+    std::string aux;
+    std::string::size_type sz;
 
-        aux = this->getfield(msg, "Range: bytes=", '-');
-        
-        if(aux.length() > 0) {
-            //try {
-                try {
-                    this->range[0] = std::stoi(aux, &sz);
-                } catch(...) {}
-                //} catch(const std::invalid_argument& ex) {}
-            //} catch (const std::out_of_range& ex) {}
-            
-            aux = this->getfield(msg, "Range: bytes=" + aux + '-', '\n');
-            
-            try {
-                this->range[1] = std::stoi(aux, &sz);
-            } catch(...) {}
+    aux = this->getfield(msg, "Range: bytes=", '-');
+    
+    if(aux.length() > 0) {
+        try {
+            this->range[0] = std::stoi(aux, &sz);
+        } catch(...) {
+            this->range[0] = -1;
+        }
+
+        aux = this->getfield(msg, "Range: bytes=" + aux + '-', '\n');
+
+        try {
+            this->range[1] = std::stoi(aux, &sz);
+        } catch(...) {
+            this->range[1] = -1;
         }
     }
 }
 
-std::string Http::genResponse(t_size filelen, std::string filetype, std::string last_modif_date, int status) {
-    std::string length  = std::to_string(filelen > 0 ? filelen : 0);
-    std::string msg     = "";
-    std::string resp;
-    std::string etag    = "\"\"";
-    std::string type    = "";
-    std::string aux     = "";
-    std::string connection;
+/******************************************************************************************/
+
+std::string Http::createResponseHeader(t_size filelen, std::string content_type, int status) {
+    std::string resp, connection;
+    std::string type    = "text/html; charset=UTF-8";
+    std::string filesize = std::to_string(filelen);
+    std::string length  = filesize;
     
     if(status < Http::Status::NOT_IMPLEMENTED) {
         if(status == Http::Status::NOT_MODIFIED) {
@@ -133,7 +190,6 @@ std::string Http::genResponse(t_size filelen, std::string filetype, std::string 
             if(status >= 200 && status < 300) {
                 if(status == Http::Status::OK) {
                     resp = RPLY_OK;
-                    
                 } else if(status == Http::Status::PARTIAL_CONTENT) {
                     resp = RPLY_PARTIAL_CONTENT;
                 } else if(status == Http::Status::ACCEPTED) {
@@ -142,65 +198,79 @@ std::string Http::genResponse(t_size filelen, std::string filetype, std::string 
                     resp = RPLY_CREATED;
                 }
                 
-                if(this->range[0] >= 0)
+                if(this->range[0] >= 0) {
                     resp = RPLY_PARTIAL_CONTENT;
-                else this->range[0] = 0;
+                    length = std::to_string(filelen - this->range[0]);
+                } else this->range[0] = 0;
 
-                msg += "Content-Range: bytes " + std::to_string(this->range[0]) + "-" + std::to_string(filelen) + "/" + length + "\r\n";
-                msg += "Accept-Ranges: bytes\r\n";
-                msg += "Cache-Control: public, max-age=0\r\n";
                 connection = "keep-alive";
+                type = content_type;
 
-                type = filetype;
+                this->header = "Content-Range: bytes " + std::to_string(this->range[0]) + "-" + std::to_string(filelen - 1) + "/" + filesize + "\r\nAccept-Ranges: bytes\r\nCache-Control: public, max-age=0\r\n";
             } else if(status == Http::Status::NOT_FOUND) {
                 resp = RPLY_NOT_FOUND;
-                aux = "<center><br><br><font size=\"8\">404</font><br><font size=\"6\">NOT FOUND</font></center>";
-                msg += "x-content-type-options: nosniff\r\n";
-                type = "text/html; charset=UTF-8";
-                length = std::to_string(aux.length());
+//              aux = "<center><br><br><font size=\"8\">404</font><br><font size=\"6\">NOT FOUND</font></center>";
+                this->header = "x-content-type-options: nosniff\r\n";
+//              length = std::to_string(aux.length());
                 connection = "close";
             } else if(status == Http::Status::NOT_ACCEPTED || status == Http::Status::BAD_REQUEST) {
                 resp = status == Http::Status::NOT_ACCEPTED ? RPLY_NOT_ACCEPTABLE : RPLY_BAD_REQUEST;
-                msg += "Cache-Control: no-cache, no-store, max-age=0\r\n";
+                this->header = "Cache-Control: no-cache, no-store, max-age=0\r\n";
                 connection = "close";
-                type = "text/html; charset=UTF-8";
             }
             
-            msg += "Content-Type: "   + type            + "\r\n";
-            msg += "Content-Length: " + length          + "\r\n";
+            this->header += "Content-Type: " + type + "\r\nContent-Length: " + length + "\r\n";
         }
     
-        msg += "Connection: " + connection + "\r\n";
+        this->header += "Connection: " + connection + "\r\n";
     } else {
         resp = RPLY_NOT_IMPLEMENTED;
     }
     
-    msg += "Access-Control-Allow-Origin: *\r\n";
-    msg += "Access-Control-Allow-Headers: X-Requested-With, Content-Type, X-Codingpedia, X-HTTP-Method-Override\r\n";
-    msg += "Date: "           + this->getDate()     + "\r\n";
-    msg += "X-Powered-By: "   + this->server_name   + "\r\n";
+    this->header += "Access-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: X-Requested-With, Content-Type, X-Codingpedia, X-HTTP-Method-Override\r\nDate: " + getDate("%a, %d %b %Y %T %Z") + "\r\nX-Powered-By: " + this->server_name + "\r\n";
     
-    return "HTTP/1.1 " + resp + "\r\n" + msg + "\r\n" + aux;
+    this->header = "HTTP/1.1 " + resp + "\r\n" + this->header + "\r\n";
+    
+    return this->header;
 }
 
-std::string Http::genRequest(std::string filename, t_size filesize, short content_type, std::string accept_type, std::string host, short headtype) {
-    std::string msg;
-    std::string content = content_type == Http::ContentType::JSON ? "application/json" : "text/html; charset=UTF-8";
+/******************************************************************************************/
+
+std::string Http::createRequestHeader(std::string filename, t_size filesize, std::string content_type, std::string host, short headtype) {
+    this->header = "";
     
-    if(headtype == Http::Method::GET) msg = "GET /" + filename + " HTTP/1.1\r\n";
-        else if(headtype == Http::Method::POST) msg = "POST /" + filename + " HTTP/1.1\r\n";
+    if(headtype == Http::Method::GET) this->header = "GET /" + filename + " HTTP/1.1\r\n";
+        else if(headtype == Http::Method::POST) this->header = "POST /" + filename + " HTTP/1.1\r\n";
 
-    msg += "Host: " + host + "\r\n";
-    msg += "Connection: keep-alive\r\n";
-    msg += "Content-Type: " + content + "\r\n";
-    msg += "Content-Length: " + std::to_string(filesize) + "\r\n";
-    msg += "Cache-Control: no-cache\r\n";
-    msg += "Accept: " + accept_type + "\r\n";
+    this->header += "Host: " + host + "\r\nConnection: keep-alive\r\nContent-Type: " + content_type + "\r\nContent-Length: " + std::to_string(filesize) + "\r\nCache-Control: no-cache\r\nAccept: */*\r\n";
 
-    return msg + "\r\n";
+    this->header += "\r\n";
+    
+    return this->header;
 }
+
+/******************************************************************************************/
+
+t_byte * Http::createBinaryPacket(t_byte * file_bin, t_size file_size) {
+    int range_start = this->range[0] > 0 ? this->range[0] : 0;
+    int head_len = this->header.length();
+    
+    this->buffer_size = head_len + (file_size - range_start);
+    
+    this->buffer = (t_byte*) malloc(sizeof(t_byte) * this->buffer_size);
+    
+    memcpy(this->buffer, this->header.c_str(), head_len);
+    
+    if(file_size > 0)
+        memcpy(this->buffer + head_len, file_bin + range_start, file_size - range_start);
+        
+    return this->buffer;
+}
+
+/******************************************************************************************/
 
 void Http::clear() {
+    this->current_type      = -1;
     this->range[0]          = 0;
     this->range[1]          = 0;
     this->reqst_file        = "";
@@ -253,4 +323,8 @@ void Http::clear() {
     
     this->reqsttype = 0;
     this->reply_status = 0;
+    this->header = "";
+    free(this->buffer);
+    this->buffer = NULL;
+    this->buffer_size = 0;
 }

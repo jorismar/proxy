@@ -3,8 +3,7 @@
 
 #include <cstdlib>
 #include <cstring>
-#include "types.h"
-#include "datapacket.h"
+#include "util.h"
 
 class VirtualFile {
     private:
