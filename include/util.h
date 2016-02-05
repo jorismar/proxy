@@ -5,6 +5,8 @@
 #include <iostream> //cout
 #include <string>
 #include <ctime>    // time();
+#include <signal.h>
+
 
 #define EXIT_IF(cond, msg) \
     if ((cond)) { \

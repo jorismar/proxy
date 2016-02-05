@@ -81,11 +81,23 @@ int Socket::Read(t_byte * data, t_size length) {
 }
 
 int Socket::Send(t_byte * data, t_size length) {
-    return send(this->svr_socket, data, length, 0);
+    int r;
+    
+    signal(SIGPIPE, SIG_IGN);
+    
+    r = send(this->svr_socket, data, length, 0);
+    
+    return r;
 }
 
 int Socket::Reply(t_byte * data, t_size length) {
-    return send(this->cl_socket, data, length, 0);
+    int r;
+    
+    signal(SIGPIPE, SIG_IGN);
+    
+    r = send(this->cl_socket, data, length, 0);
+    
+    return r;
 }
 
 int Socket::Receive(t_byte * data, t_size length, int timeout) {

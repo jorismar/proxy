@@ -2,6 +2,7 @@
 #define SOCKET_H
 
 #include <cstring>
+#include <signal.h>
 #include <unistd.h>
 #include <arpa/inet.h>
 #include "util.h"
@@ -69,6 +70,8 @@ class Socket {
         
         static int sendTo(t_socket dest, t_byte * data, t_size size) {
             int r;
+        
+            signal(SIGPIPE, SIG_IGN);
         
             r = send(dest, data, size, 0);
         
