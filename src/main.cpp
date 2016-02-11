@@ -9,25 +9,24 @@
 
 /******************************************************************************************/
 
-Socket*     g_server;
-int 		g_server_port 		= 8080;
-int 		g_initial_tcp_port 	= 8090;
-int 		g_initial_udp_port 	= 1234;
-int 		g_dash_profile 		= 1; 				// 0 = live, 1 = on demand
-int 		g_controller_port 	= 8085;
-std::string g_server_ip 		= "127.0.0.1";
-std::string g_site_path 		= "./www";
-std::string g_dash_path 		= "./dash";
-std::string g_mpd_name			= "dash.mpd";
-std::string g_controller_ip 	= "127.0.0.1";
-std::string g_controller_url_path = "ArthronRest/api/dash_sessions";
+Socket*     g_server;                               // Server socket for communication with the controller server
+int 		g_server_port 		= 8080;             // Server port for communication with the controller server
+int 		g_initial_tcp_port 	= 8090;             // Initial TCP port for sessions of http clients
+int 		g_initial_udp_port 	= 1234;             // Initial UDP port to receive the arthron video stream for sessions
+int 		g_dash_profile 		= 1; 				// Dash profile. 0 = live, 1 = on demand (Not Implemented Yet)
+int 		g_controller_port 	= 8085;             // Port used by the control server
+bool        g_dash_on_the_fly   = 0;                // MPEG-TS Demux, Dash Processer and HTTP Sender run in on-the-fly mode (Not Implemented Yet)   
+std::string g_server_ip 		= "127.0.0.1";      // Server IP
+std::string g_site_path 		= "./www";          // Path of website files
+std::string g_dash_path 		= "./dash";         // Path where the fragments, initiators and mpd are.
+std::string g_mpd_name			= "dash.mpd";       // MPD file name
+std::string g_controller_ip 	= "127.0.0.1";      // Controller server IP
+std::string g_controller_url_path = "ArthronRest/api/dash_sessions";    // HTTP URL Path of controller server identify the register request
 
 /******************************************************************************************/
 
 void registerOnController();
 void startServer();
-int findSession(std::vector<Session*>&, std::string);
-std::string getJSONValue(std::string, std::string);
 
 /******************************************************************************************/
 
@@ -304,50 +303,3 @@ void startServer() {
 
 	free(buffer);
 }
-
-/******************************************************************************************/
-
-int findSession(std::vector<Session*> &list, std::string id) {
-	int i;
-	
-	for(i = 0; i < list.size(); i++) {
-		if(!id.compare(list.at(i)->getID()))
-			break;
-	}
-	
-	i = i < list.size() ? i : -1;
-	
-	return i;
-}
-
-/******************************************************************************************/
-
-std::string getJSONValue(std::string field, std::string src) {
-	std::string value = "";
-	int i, pos;
-	char c;
-	
-	pos = src.find("\"" + field + "\"");
-	
-	if(pos != std::string::npos) {
-		c = ':';
-		
-		for(i = pos + field.length() + 2; i < src.length(); i++) {
-			if(src.at(i) == c) {
-				if(c == ':') {
-					c = '\"';
-				} else if(c == '\"') {
-					for(i = i + 1; i < src.length() && src.at(i) != '\"'; i++) {
-						value += src.at(i);
-					}
-					
-					break;
-				}
-			} else if(src.at(i) != ' ')
-				break;
-		}
-	}
-
-	return value;
-}
-
