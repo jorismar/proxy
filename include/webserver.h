@@ -28,10 +28,10 @@ class Webserver {
         t_pos dash_frag_count;
         bool alive;
         int port;
-        int dash_profile;
+        bool on_the_fly;
         
     public:
-        Webserver(int, int, Buffer**, Buffer**, std::string, std::string, bool);
+        Webserver(int, bool, Buffer**, Buffer**, std::string, std::string);
         virtual ~Webserver();
         
         bool openConnection();

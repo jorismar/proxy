@@ -19,10 +19,11 @@ class Session {
         Webserver * webserver;
         Buffer * video_dash_buffer;
         Buffer * audio_dash_buffer;
-
+        bool on_the_fly;
+        int dash_profile;
     
     public:
-        Session(std::string, int, t_size, int, std::string, int, std::string, std::string);
+        Session(std::string, int, int, std::string, int, std::string, std::string, bool, t_size);
         virtual ~Session();
         
         bool bindUdpPort();

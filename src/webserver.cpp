@@ -1,12 +1,12 @@
 #include "webserver.h"
 
-Webserver::Webserver(int svr_port, int dash_profile, Buffer **video_buffer, Buffer **audio_buffer, std::string path, std::string dash_path, bool is_sequential) {
+Webserver::Webserver(int svr_port, bool is_on_the_fly, Buffer **video_buffer, Buffer **audio_buffer, std::string path, std::string dash_path) {
     this->port = svr_port;
-    this->dash_profile = dash_profile;
     this->dash_path = dash_path;
     this->v_dash_buffer = video_buffer;
     this->a_dash_buffer = audio_buffer;
     this->page_path = path;
+    this->on_the_fly = is_on_the_fly;
 }
 
 Webserver::~Webserver() {
@@ -92,10 +92,10 @@ VirtualFile * Webserver::getFile(std::string filename) {
 	std::string filetype = Http::filename_to_content_type(filename, &type);
     
     if(type == Http::ContentType::DASH) {
-        if(this->dash_profile == Dash::Profile::LIVE) {
+        if(this->on_the_fly) { // Implement to ignore Initializations and MPD
             file = this->readExternalBuffer(filename);
             return file;
-        } else if(this->dash_profile == Dash::Profile::ON_DEMAND) {
+        } else /*if(this->dash_profile == Dash::Profile::ON_DEMAND)*/ {
             rqstfile = this->dash_path + filename;
         }
     } else {

@@ -2,20 +2,22 @@
 
 /***************************************************************************************/
 
-Session::Session(std::string id, int udp_port, t_size buffer_size, int http_port, std::string site_path, int dash_profile, std::string dash_path, std::string mpd) {
+Session::Session(std::string id, int udp_port, int http_port, std::string site_path, int dash_profile, std::string dash_path, std::string mpd, bool is_on_the_fly, t_size buffer_size) {
     this->id = id;
     this->path = site_path;
     this->dash_path = dash_path;
 	this->mpd_name = mpd;
     this->udp_port = udp_port;
     this->http_port = http_port;
+    this->on_the_fly = is_on_the_fly;
+    this->dash_profile = dash_profile;
     
-    if(dash_profile == Dash::Profile::ON_DEMAND) {
-        this->webserver = new Webserver(http_port, dash_profile, NULL, NULL, path, dash_path, true);
+    if(!on_the_fly) {
+        this->webserver = new Webserver(http_port, is_on_the_fly, NULL, NULL, path, dash_path);
     } else {
         this->video_dash_buffer = new Buffer(buffer_size);
         this->audio_dash_buffer = new Buffer(buffer_size - 1);
-        this->webserver = new Webserver(http_port, dash_profile, &this->video_dash_buffer, &this->audio_dash_buffer, path, dash_path, true);
+        this->webserver = new Webserver(http_port, is_on_the_fly, &this->video_dash_buffer, &this->audio_dash_buffer, path, dash_path);
     }
 }
 

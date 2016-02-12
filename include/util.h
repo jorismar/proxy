@@ -7,7 +7,6 @@
 #include <ctime>    // time();
 #include <signal.h>
 
-
 #define EXIT_IF(cond, msg) \
     if ((cond)) { \
         std::cout << std::endl << msg << "\n\nClose." << std::endl; \
@@ -34,21 +33,6 @@ static std::string getDate(std::string format) {
     strftime (buffer, 80, format.c_str(), timeinfo);
     
     return std::string(buffer);
-}
-
-/******************************************************************************************/
-
-static int findSession(std::vector<Session*> &list, std::string id) {
-	int i;
-	
-	for(i = 0; i < list.size(); i++) {
-		if(!id.compare(list.at(i)->getID()))
-			break;
-	}
-	
-	i = i < list.size() ? i : -1;
-	
-	return i;
 }
 
 /******************************************************************************************/
