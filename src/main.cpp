@@ -29,7 +29,6 @@ std::string g_mpd_name			= "dash.mpd";       // MPD file name
 std::string g_controller_ip 	= "127.0.0.1";      // Controller server IP
 std::string g_controller_url_path = "ArthronRest/api/dash_sessions";    // HTTP URL Path of controller server identify the register request
 
-
 /******************************************************************************************
  * \brief 	This function connect and register the proxy on the
  * 			controller server, sending the ip and port used by the server

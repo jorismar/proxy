@@ -1,3 +1,9 @@
+/******************************************************************************************
+ * \file 	session.h
+ * 
+ * \author 	Jorismar Barbosa Meira <jorismar.barbosa@lavid.ufpb.br>
+ ******************************************************************************************/
+
 #ifndef SESSION_H
 #define SESSION_H
 
@@ -7,37 +13,105 @@
 #include "buffer.h"
 #include "util.h"
 #include "dash.h"
+/******************************************************************************************
+ * \brief .
+ * 
+ * \headerfile session.h
+ ******************************************************************************************/
 
 class Session {
     private:
-        std::string id;
-        std::string path;
-        int udp_port;
-        int http_port;
-        std::string dash_path;
-        std::string mpd_name;
-        Webserver * webserver;
-        Buffer * video_dash_buffer;
-        Buffer * audio_dash_buffer;
-        bool on_the_fly;
-        int dash_profile;
-    
+    /******************************************************************************************/
+
+        std::string id;             // Session ID
+        std::string path;           // Website files path
+        std::string dash_path;      // Dash files path
+        std::string mpd_name;       // MPD file name
+        int udp_port;               // UDP port for receive video stream
+        int http_port;              // TCP port for HTTP users access
+        int dash_profile;           // Dash profile used in this session
+        bool on_the_fly;            // On-the-fly mode on/off flag
+        Buffer * video_dash_buffer; // Buffer for Dash video fragments used in on-the-fly mode
+        Buffer * audio_dash_buffer; // Buffer for Dash audio fragments used in on-the-fly mode
+        Webserver * webserver;      // Webserver object
+
+    /******************************************************************************************/
+
     public:
-        Session(std::string, int, int, std::string, int, std::string, std::string, bool, t_size);
+        /******************************************************************************************
+         * \brief   Constructor
+         *
+         * \param   id            Session ID
+         * \param   udp_port      UDP port for receive video stream
+         * \param   http_port     TCP port for HTTP users access
+         * \param   site_path     Website files path
+         * \param   dash_profile  Dash profile used in this session
+         * \param   dash_path     Dash files path
+         * \param   mpd           MPD file name
+         * \param   is_on_the_fly On-the-fly mode on/off flag
+         * \param   buffer_size   Size of buffer Dash fragments used in on-the-fly mode
+         ******************************************************************************************/
+        Session(std::string id, int udp_port, int http_port, std::string site_path, int dash_profile, std::string dash_path, std::string mpd, bool is_on_the_fly, t_size buffer_size);
+
+        /******************************************************************************************
+         * \brief   Destructor
+         ******************************************************************************************/
         virtual ~Session();
         
+        /******************************************************************************************
+         * \brief   This function bind the UDP port
+         *
+         * \return  Return true if bind is sucessfuly and false if not.
+         ******************************************************************************************/
         bool bindUdpPort();
+
+        /******************************************************************************************
+         * \brief   This function bind the UDP port
+         *
+         * \return  Return true if bind is sucessfuly and false if not.
+         ******************************************************************************************/
         bool bindHttpPort();
         
+        /******************************************************************************************
+         * \brief   This function start the Webserver and Dash Processor
+         ******************************************************************************************/
         void start();
+
+        /******************************************************************************************
+         * \brief   This function stop the Webserver and Dash Processor
+         ******************************************************************************************/
         void stop();
         
+        /******************************************************************************************
+         * \brief   Get ID session
+         *
+         * \return  Return the ID of this session.
+         ******************************************************************************************/
         std::string getID();
-        void setUdpPort(int);
-        void setHttpPort(int);
         
+        /******************************************************************************************
+         * \brief   Get UDP Port
+         *
+         * \return  Return the UDP port used to receive video stream.
+         ******************************************************************************************/
         int getUdpPort();
+
+        /******************************************************************************************
+         * \brief   Get TCP/HTTP port
+         *
+         * \return  Return the TCP port used to send dash video stream
+         ******************************************************************************************/
         int getHttpPort();
+
+        /******************************************************************************************
+         * \brief   This function set the UDP port
+         ******************************************************************************************/
+        void setUdpPort(int port);
+
+        /******************************************************************************************
+         * \brief   This function set the TCP/HTTP port
+         ******************************************************************************************/
+        void setHttpPort(int port);
 };
 
 #endif

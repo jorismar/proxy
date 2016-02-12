@@ -32,7 +32,7 @@ Session::~Session() {
 /***************************************************************************************/
 
 bool Session::bindUdpPort() {
-    /* Bind UDP Dash Port retorna falso se a porta não foi aberta */
+    // Not Implemented Yet
     return true;
 }
 
@@ -70,6 +70,18 @@ std::string Session::getID() {
 
 /***************************************************************************************/
 
+int Session::getUdpPort() {
+    return this->udp_port;
+}
+
+/***************************************************************************************/
+
+int Session::getHttpPort() {
+    return this->http_port;
+}
+
+/***************************************************************************************/
+
 void Session::setUdpPort(int port) {
     this->udp_port = port;
 //  this->dashserver->setPort(port);
@@ -80,16 +92,4 @@ void Session::setUdpPort(int port) {
 void Session::setHttpPort(int port) {
     this->http_port = port;
     this->webserver->setPort(port);
-}
-
-/***************************************************************************************/
-
-int Session::getUdpPort() {
-    return this->udp_port;
-}
-
-/***************************************************************************************/
-
-int Session::getHttpPort() {
-    return this->http_port;
 }

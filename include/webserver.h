@@ -1,3 +1,9 @@
+/******************************************************************************************
+ * \file 	webserver.h
+ * 
+ * \author 	Jorismar Barbosa Meira <jorismar.barbosa@lavid.ufpb.br>
+ ******************************************************************************************/
+
 #ifndef WEBSERVER_H
 #define WEBSERVER_H
 
@@ -15,49 +21,105 @@
 #include "http.h"
 #include "dash.h"
 
+/******************************************************************************************
+ * \brief .
+ * 
+ * \headerfile webserver.h
+ ******************************************************************************************/
+
 class Webserver {
     private:
-        Http * header;
-        Socket * socket;
-        Buffer * page_buffer;
-        Buffer ** v_dash_buffer;
-        Buffer ** a_dash_buffer;
-        t_socket client;
-        std::string page_path;
-        std::string dash_path;
-        t_pos dash_frag_count;
-        bool alive;
-        int port;
-        bool on_the_fly;
+    /******************************************************************************************/
+
+        Http * header;              // HTTP Protocol Object
+        Socket * socket;            // TCP Socket for server
+        Buffer ** v_dash_buffer;    // Dash video buffer for on-the-fly mode
+        Buffer ** a_dash_buffer;    // Dash audio buffer for on-the-fly mode
+        std::string page_path;      // Path of the Website files
+        std::string dash_path;      // Path of the Dash files
+        int port;                   // TCP port used for the server
+        bool alive;                 // Flag to keep the server alive.
+        bool on_the_fly;            // On-the-fly mode flag
+
+    /******************************************************************************************/
         
     public:
-        Webserver(int, bool, Buffer**, Buffer**, std::string, std::string);
+        
+        /******************************************************************************************
+         * \brief   Constructor
+         * 
+         * \param   svr_port        TCP port for HTTP server
+         * \param   is_on_the_fly   Dash on-the-fly mode flag
+         * \param   video_buffer    Dash video buffer for on-the-fly mode.
+         * \param   audio_buffer    Dash audio buffer for on-the-fly mode.
+         * \param   path            Website files path
+         * \param   dash_path       Dash files path
+         ******************************************************************************************/
+        Webserver(int svr_port, bool is_on_the_fly, Buffer **video_buffer, Buffer **audio_buffer, std::string path, std::string dash_path);
+
+        /******************************************************************************************
+         * \brief   Destructor
+         ******************************************************************************************/
         virtual ~Webserver();
-        
+
+        /******************************************************************************************
+         * \brief   This method start and bind TCP sockets for HTTP server
+         *
+         * \return  Return true if TCP socket open and bind sucessfuly and false if not.
+         ******************************************************************************************/
         bool openConnection();
+
+        /******************************************************************************************
+         * \brief   This method start the HTTP server
+         ******************************************************************************************/
         void start();
+
+        /******************************************************************************************
+         * \brief   This method stop the HTTP server
+         ******************************************************************************************/
         void stop();
-        
-        VirtualFile* getFile(std::string);
-        VirtualFile* readFile(std::string, std::string);
-        VirtualFile* readExternalBuffer(std::string);
-        void startClient(t_socket);
-        void startTest(t_socket);
-        
-        void setPort(int);
+
+        /******************************************************************************************
+         * \brief   This method process file request and return then.
+         *
+         * \param   filename    Name of requested file.
+         *
+         * \return  Return a virtual objetc of the requested file, or NULL if a error occurs.
+         ******************************************************************************************/
+        VirtualFile* getFile(std::string filename);
+
+        /******************************************************************************************
+         * \brief   This method read a file on the computer disc.
+         *
+         * \param   path        Requested file location.
+         * \param   filetype    Type of requested file.
+         *
+         * \return  Return a virtual objetc of the requested file, or NULL if a error occurs.
+         ******************************************************************************************/
+        VirtualFile* readFile(std::string path, std::string filetype);
+
+        /******************************************************************************************
+         * \brief   This method read a file on the buffer.
+         *
+         * \param   filename    Name of requested file.
+         *
+         * \return  Return a virtual objetc of the requested file, or NULL if a error occurs.
+         ******************************************************************************************/
+        VirtualFile* readExternalBuffer(std::string filename);
+
+        /******************************************************************************************
+         * \brief   This method start a thread to meet a specific client.
+         *
+         * \param   cl  Socket of a connected client.
+         ******************************************************************************************/
+        void startClient(t_socket cl);
+
+        /******************************************************************************************
+         * \brief   Set the TCP port
+         *
+         * \param   port    TCP port for the HTTP connections
+         ******************************************************************************************/
+        void setPort(int port);
 };
 
 #endif
-
-/*
-http://www.anirudhtom.com/2011/03/live-streaming-video-tutorial-for.html
-http://download.tsi.telecom-paristech.fr/gpac/doc/libgpac/mpegts_8h.html#structtag__m2ts__es
-https://pt.wikipedia.org/wiki/Signal.h
-http://pubs.opengroup.org/onlinepubs/7908799/xns/syssocket.h.html
-http://www.gdsw.at/languages/c/programming-bbrown/c_075.htm
-http://www.cplusplus.com/reference/cstdio/setbuf/
-http://www.tutorialspoint.com/unix_sockets/socket_server_example.htm
-http://www.cplusplus.com/reference/ctime/
-
-
-*/
