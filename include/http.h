@@ -266,7 +266,7 @@ class Http {
             return -1;
         }
         
-        static std::string content_type_to_str(int type) {
+        static std::string int_to_content_type(int type) {
             if(type == Http::ContentType::JPG)
                 return "image/jpg";
             else if(type == Http::ContentType::PNG)
