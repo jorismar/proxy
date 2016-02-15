@@ -14,7 +14,7 @@
 #include "util.h"
 #include "dash.h"
 /******************************************************************************************
- * \brief .
+ * \brief This class manages and controls the session running.
  * 
  * \headerfile session.h
  ******************************************************************************************/

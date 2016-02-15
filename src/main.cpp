@@ -65,7 +65,9 @@ void registerOnController() {
 	buffer = (t_byte*) malloc(sizeof(t_byte) * Http::BufferSize::MAX);
 	memset(buffer, 0, Http::BufferSize::MAX);
 
-	EXIT_IF(socket->Receive(buffer, Http::BufferSize::MAX, 30) < 0, "");
+	PRINT("[INFO] Waiting for response...");
+	
+	EXIT_IF(socket->Receive(buffer, Http::BufferSize::MAX) < 0, "");
 	
 	PRINT("[INFO] Processing response...");
 
