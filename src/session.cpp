@@ -47,10 +47,7 @@ bool Session::bindHttpPort() {
 void Session::start() {
     PRINT("[INFO] Session id:" << this->id << " running on UDP:" << this->udp_port << "/HTTP:" << this->http_port);
 
-    std::string cmd = "DashCast -av \"udp://:" + std::to_string(this->udp_port) + "?fifo_size=100000\" -live -out \"" + this->dash_path + "\"";
-	
-	
-	node dash-engine/live-stream udp://150.165.205.40:1234?fifo_size=50000000 -mpd lavid.mpd -foldersegments Users/Josue/Downloads/proxy-master/site
+    std::string cmd = "node dash-engine/bin/live-stream udp://:" + std::to_string(this->udp_port) + "?fifo_size=50000000 -mpd" + this->mpd_name + "-foldersegments \"" + this->dash_path + "\"";
 
     std::thread websvr([=](){this->webserver->start(); return 1;});
     std::thread dash([=](){std::system(cmd.c_str()); return 1;});

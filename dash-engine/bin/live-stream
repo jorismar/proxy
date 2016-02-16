@@ -1,0 +1,46 @@
+#!/usr/bin/env node
+var minimist             = require('minimist');
+var liveStreamController = require('../lib/live-stream-controller');
+var mpd_name;
+var path_segments;
+
+function printUsage() {
+  console.log('usage: live-stream [-h] [-c config_file] input_file');
+  console.log('  -h:             show this help message');
+  console.log('  -c config_file: specify a config file to use, must be a valid JSON file');
+  console.log('  input_file:     the input file to stream, must be a MPEG-2 transport stream');
+  console.log('  -mpd name mpd ');
+  console.log('  -foldersegments where to go get the segments');
+  console.log(' -a to filter audio');
+  console.log(' -v to filter video');
+  console.log(' -av to audio and video');
+}
+
+var argv = minimist(process.argv.slice(2), { boolean: ['default'] });
+var argv2 = process.argv.slice(2);
+
+if (argv._.length !== 1 || argv.h === true) {
+  printUsage();
+} else {
+  var inputFile = argv._[0];
+  var configFile = argv.c;
+  var list, audio = false, video = false, audvideo = true;
+
+  for(i = 0; i<argv2.length; i++){
+    if(argv2[i] === "-mpd"){
+      mpd_name = argv2[++i];
+    }else if(argv2[i] === "-foldersegments"){
+      path_segments = argv2[++i];
+    }else if(argv2[i] === "-a"){
+      audio = true;
+      list.push(path_segments);
+    }else if(argv2[i] === "-v"){
+      video = true;
+      list.push(video);
+    }else if(argv2[i] === "-av"){
+
+    }
+  }
+
+  liveStreamController.launch(inputFile, configFile, mpd_name, path_segments);
+}
