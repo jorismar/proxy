@@ -2,8 +2,9 @@
 
 /***************************************************************************************/
 
-Session::Session(std::string id, int udp_port, int http_port, std::string site_path, int dash_profile, std::string dash_path, std::string mpd, bool is_on_the_fly, t_size buffer_size) {
+Session::Session(std::string id, std::string ip, int udp_port, int http_port, std::string site_path, int dash_profile, std::string dash_path, std::string mpd, bool is_on_the_fly, t_size buffer_size) {
     this->id = id;
+	this->ip = ip;
     this->path = site_path;
     this->dash_path = dash_path;
 	this->mpd_name = mpd;
@@ -47,8 +48,10 @@ bool Session::bindHttpPort() {
 void Session::start() {
     PRINT("[INFO] Session id:" << this->id << " running on UDP:" << this->udp_port << "/HTTP:" << this->http_port);
 
-    std::string cmd = "node dash-engine/bin/live-stream udp://:" + std::to_string(this->udp_port) + "?fifo_size=50000000 -mpd" + this->mpd_name + "-foldersegments \"" + this->dash_path + "\"";
+    std::string cmd = "nodejs ./dash-engine/bin/live-stream udp://" + this->ip + ":" + std::to_string(this->udp_port) + "?fifo_size=50000000 -mpd " + this->mpd_name + " -foldersegments " + this->dash_path;
 
+	PRINT(cmd)
+	
     std::thread websvr([=](){this->webserver->start(); return 1;});
     std::thread dash([=](){std::system(cmd.c_str()); return 1;});
 

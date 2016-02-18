@@ -145,7 +145,7 @@ void startServer() {
 							PRINT("[INFO] Command received: Start Session id:" << id);
 							
 							if(findSession(sessions, id) < 0) {
-								sessions.push_back(new Session(id, g_initial_udp_port++, g_initial_tcp_port++, g_site_path, g_dash_profile, g_dash_path, g_mpd_name, g_dash_on_the_fly, g_on_the_fly_buffer_size));
+								sessions.push_back(new Session(id, g_controller_ip, g_initial_udp_port++, g_initial_tcp_port++, g_site_path, g_dash_profile, g_dash_path, g_mpd_name, g_dash_on_the_fly, g_on_the_fly_buffer_size));
 								
 								while(!sessions.back()->bindUdpPort())
 									sessions.back()->setUdpPort(g_initial_udp_port++);

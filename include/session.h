@@ -23,6 +23,7 @@ class Session {
     private:
     /******************************************************************************************/
 
+        std::string ip;             // IP of video stream origin
         std::string id;             // Session ID
         std::string path;           // Website files path
         std::string dash_path;      // Dash files path
@@ -42,6 +43,7 @@ class Session {
          * \brief   Constructor
          *
          * \param   id            Session ID
+         * \param   ip            IP of UDP stream origin server
          * \param   udp_port      UDP port for receive video stream
          * \param   http_port     TCP port for HTTP users access
          * \param   site_path     Website files path
@@ -51,7 +53,7 @@ class Session {
          * \param   is_on_the_fly On-the-fly mode on/off flag
          * \param   buffer_size   Size of buffer Dash fragments used in on-the-fly mode
          ******************************************************************************************/
-        Session(std::string id, int udp_port, int http_port, std::string site_path, int dash_profile, std::string dash_path, std::string mpd, bool is_on_the_fly, t_size buffer_size);
+        Session(std::string id, std::string ip, int udp_port, int http_port, std::string site_path, int dash_profile, std::string dash_path, std::string mpd, bool is_on_the_fly, t_size buffer_size);
 
         /******************************************************************************************
          * \brief   Destructor
