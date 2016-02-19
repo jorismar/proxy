@@ -74,7 +74,6 @@ function merge(orig, custom) {
 
 function load(inputFile, configFile, mpd, path_seg) {
   mpd_name = mpd;
-  path_segments = path_seg;
   var aux;
   if (configFile) {
     // Attempt to load config from file, exit if fails
