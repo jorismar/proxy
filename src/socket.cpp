@@ -28,6 +28,7 @@ Socket::Socket(int port) {
     else {
         this->port      = port;
         this->timeout   = 0;
+        this->remote_socket_len = 0;
         this->connected = false;
         this->bound     = false;
         this->listening = false;

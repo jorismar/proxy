@@ -18,6 +18,7 @@ bool Webserver::openConnection() {
     bool r = true;
     
     this->socket = new Socket(this->port);
+    
     if(this->socket->Bind() < 0) {
         r = false;
         PRINT("\n[ERROR] Webserver bind error");
@@ -36,8 +37,11 @@ void Webserver::start() {
 
     while(alive) {
         client = this->socket->Accept();
-        std::thread cl([=](){Webserver::startClient(client); return 1;});
-        cl.detach();
+        
+        if(client >= 0) {
+            std::thread cl([=](){Webserver::startClient(client); return 1;});
+            cl.detach();
+        }
     }
     
     PRINT("[INFO] Session closed!")
