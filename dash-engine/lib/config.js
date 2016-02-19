@@ -87,8 +87,8 @@ function load(inputFile, configFile, mpd, path_seg) {
     merge(defaultConfig, loadedConfig);
   }
   defaultConfig.inputFile = inputFile;
-  defaultConfig.segmentDir = path.sep + path.join(path_seg, 'dashts');
-  defaultConfig.outputDir = path.sep + path.join(path_seg, 'dash');
+  defaultConfig.segmentDir = path.join(path_seg, 'dashts');
+  defaultConfig.outputDir = path.join(path_seg, 'dash');
 
   for(i = 0; i<defaultPackaging.mp4box_opts.length; i++){
 
