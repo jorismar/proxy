@@ -35,6 +35,7 @@ Session::~Session() {
         this->audio_dash_buffer->~Buffer();
 
     this->webserver->~Webserver();
+    
 }
 
 /***************************************************************************************/
@@ -55,15 +56,17 @@ bool Session::bindHttpPort() {
 void Session::start() {
     PRINT("[INFO] Session id:" << this->id << " running on UDP:" << this->udp_port << "/HTTP:" << this->http_port);
 
-    std::string cmd = "nodejs ./dash-engine/bin/live-stream udp://" + this->ip + ":" + std::to_string(this->udp_port) + "?fifo_size=50000000 -mpd " + this->mpd_name + " -foldersegments " + this->dash_path;
+    std::string clear = "rm -f -r -d" + this->dash_path;
+    std::string run = "nodejs ./dash-engine/bin/live-stream udp://" + this->ip + ":" + std::to_string(this->udp_port) + "?fifo_size=50000000 -mpd " + this->mpd_name + " -foldersegments " + this->dash_path;
+    std::string cmd = clear + " && " + run;
 
-	PRINT(cmd)
-	
     std::thread websvr([=](){this->webserver->start(); return 1;});
-    std::thread dash([=](){std::system(cmd.c_str()); return 1;});
+    std::thread dash([=](){execute(cmd); return 1;});
 
     dash.detach();
     websvr.join();
+    
+    execute(clear);
 }
 
 /***************************************************************************************/

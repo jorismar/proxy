@@ -66,6 +66,10 @@ static std::string getJSONValue(std::string field, std::string src) {
 	return value;
 }
 
+static void execute(std::string cmd) {
+    std::system(cmd.c_str());
+}
+
 #endif
 
 
