@@ -165,6 +165,8 @@ void startServer() {
 							PRINT("[INFO] Command received: Close Session id:" << id);
 								
 							int i = findSession(sessions, id);
+							
+							PRINT(i)
 								
 							if(i >= 0) {
 								sessions.at(i)->stop();
