@@ -58,8 +58,8 @@ void Session::start() {
     std::string cmd = clear + " && " + run;
 
     std::thread websvr([=](){this->webserver->start(); return 1;});
-    std::thread dash([=](){execute(cmd); return 1;});
-    std::thread cleaning([=](){execute(clear); return 1;});
+    std::thread dash(execute, cmd);
+    std::thread cleaning(execute, cmd);
 
     PRINT("[INFO] Session id:" << this->id << " running on UDP:" << this->udp_port << "/HTTP:" << this->http_port);
 
