@@ -22,7 +22,7 @@ Session::Session(std::string id, std::string ip, int udp_port, int http_port, st
         this->audio_dash_buffer = new Buffer(buffer_size - 1);
     }
 
-    this->webserver = new Webserver(http_port, is_on_the_fly, &this->video_dash_buffer, &this->audio_dash_buffer, path, dash_path);
+    this->webserver = new Webserver(http_port, is_on_the_fly, &this->video_dash_buffer, &this->audio_dash_buffer, path, dash_path + "/dash");
 }
 
 /***************************************************************************************/
