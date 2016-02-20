@@ -46,7 +46,7 @@ void Webserver::start() {
     
     PRINT("[INFO] Session closed!")
 
-    this->socket->Close();
+    this->socket->CloseServer();
 }
 
 void Webserver::stop() {
