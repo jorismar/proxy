@@ -14,19 +14,26 @@ Session::Session(std::string id, std::string ip, int udp_port, int http_port, st
     this->dash_profile = dash_profile;
     
     if(!on_the_fly) {
-        this->webserver = new Webserver(http_port, is_on_the_fly, NULL, NULL, path, dash_path);
+        this->video_dash_buffer = NULL;
+        this->audio_dash_buffer = NULL;
+//        this->webserver = new Webserver(http_port, is_on_the_fly, NULL, NULL, path, dash_path);
     } else {
         this->video_dash_buffer = new Buffer(buffer_size);
         this->audio_dash_buffer = new Buffer(buffer_size - 1);
-        this->webserver = new Webserver(http_port, is_on_the_fly, &this->video_dash_buffer, &this->audio_dash_buffer, path, dash_path);
     }
+
+    this->webserver = new Webserver(http_port, is_on_the_fly, &this->video_dash_buffer, &this->audio_dash_buffer, path, dash_path);
 }
 
 /***************************************************************************************/
 
 Session::~Session() {
-    this->video_dash_buffer->~Buffer();
-    this->audio_dash_buffer->~Buffer();
+    if(this->video_dash_buffer != NULL)
+        this->video_dash_buffer->~Buffer();
+        
+    if(this->audio_dash_buffer != NULL)
+        this->audio_dash_buffer->~Buffer();
+
     this->webserver->~Webserver();
 }
 
