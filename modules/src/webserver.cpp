@@ -1,5 +1,7 @@
 #include "webserver.h"
 
+/******************************************************************************************/
+
 Webserver::Webserver(int svr_port, bool is_on_the_fly, Buffer **video_buffer, Buffer **audio_buffer, std::string path, std::string dash_path) {
     this->port = svr_port;
     this->dash_path = dash_path;
@@ -9,10 +11,14 @@ Webserver::Webserver(int svr_port, bool is_on_the_fly, Buffer **video_buffer, Bu
     this->on_the_fly = is_on_the_fly;
 }
 
+/******************************************************************************************/
+
 Webserver::~Webserver() {
     this->alive = false;
     this->socket->~Socket();
 }
+
+/******************************************************************************************/
 
 bool Webserver::openConnection() {
     bool r = true;
@@ -29,6 +35,8 @@ bool Webserver::openConnection() {
     
     return r;
 }
+
+/******************************************************************************************/
 
 void Webserver::start() {
     t_socket client;
@@ -49,9 +57,19 @@ void Webserver::start() {
     this->socket->CloseServer();
 }
 
+/******************************************************************************************/
+
 void Webserver::stop() {
     this->alive = false;
+    
+    Socket * unlock = new Socket();
+    
+    while(unlock->Connect("localhost", this->port) < 0); // Unlock Accept();
+    
+    unlock->Close();
 }
+
+/******************************************************************************************/
 
 void Webserver::startClient(t_socket cl) {
     VirtualFile * file;
@@ -88,6 +106,8 @@ void Webserver::startClient(t_socket cl) {
     Socket::Close(cl);
 }
 
+/******************************************************************************************/
+
 VirtualFile * Webserver::getFile(std::string filename) {
     VirtualFile * file = NULL;
     std::string rqstfile;
@@ -113,6 +133,8 @@ VirtualFile * Webserver::getFile(std::string filename) {
 
     return file;
 }
+
+/******************************************************************************************/
 
 VirtualFile * Webserver::readFile(std::string path, std::string filetype) {
 	int count;
@@ -141,24 +163,24 @@ VirtualFile * Webserver::readFile(std::string path, std::string filetype) {
     return vfile;
 }
 
+/******************************************************************************************/
+
 VirtualFile * Webserver::readExternalBuffer(std::string filename) {
     VirtualFile * file = NULL;
     Buffer ** buff = filename.find("vid") != std::string::npos ? this->v_dash_buffer : this->a_dash_buffer;
-    // Se necessário, inserir comparativo para audio
+    // Implement the audio check if needed.
     
     return (*buff)->next();
 }
+
+/******************************************************************************************/
 
 void Webserver::setPort(int svr_port) {
     this->port = svr_port;
 }
 
+/******************************************************************************************/
+
 int Webserver::getPort() {
     return this->port;
 }
-
-//MP4Box -dash 4000 -rap -segment-name -profile live -out video.mpd video.mp4#video video.mp4#audio
-//MP4Box -dash 4000 -rap -profile live -out video.mpd video.mp4#video video.mp4#audio
-//EXIT_IF(pfile == NULL, "Error: File not found.");
-//std::thread cl(&Webserver::startClient, this);
-//std::this_thread::sleep_for (std::chrono::milliseconds(1000));

@@ -23,8 +23,8 @@ int 		g_controller_port 	= 8085;         // Port used by the control server
 int			g_on_the_fly_buffer_size = 0;		// Buffer size used in on-the-fly mode
 bool        g_dash_on_the_fly   = false;        // MPEG-TS Demux, Dash Processer and HTTP Sender run in on-the-fly mode (Not Implemented Yet)   
 std::string g_server_ip 		= "127.0.0.1";  // Server IP
-std::string g_site_path 		= "./www";      // Path of website files
-std::string g_dash_path 		= "./dash";     // Path where the fragments, initiators and mpd are.
+std::string g_site_path 		= "/var/dashserver/www"; // Path of website files
+std::string g_dash_path 		= "/tmp/dashserver";     // Path where the fragments, initiators and mpd are.
 std::string g_mpd_name			= "dash.mpd";   // MPD file name
 std::string g_controller_ip 	= "127.0.0.1";  // Controller server IP
 std::string g_controller_url_path = "ArthronRest/api/dash_sessions";	// HTTP URL Path of controller server identify the register request
@@ -145,7 +145,7 @@ void startServer() {
 							PRINT("[INFO] Command received: Start Session id:" << id);
 							
 							if(findSession(sessions, id) < 0) {
-								sessions.push_back(new Session(id, /*g_controller_ip*/"192.168.0.102", g_initial_udp_port++, g_initial_tcp_port++, g_site_path, g_dash_profile, g_dash_path + "/" + id, g_mpd_name, g_dash_on_the_fly, g_on_the_fly_buffer_size));
+								sessions.push_back(new Session(id, /*g_controller_ip*/"192.168.15.128", g_initial_udp_port++, g_initial_tcp_port++, g_site_path, g_dash_profile, g_dash_path + "/" + id, g_mpd_name, g_dash_on_the_fly, g_on_the_fly_buffer_size));
 								
 								while(!sessions.back()->bindUdpPort())
 									sessions.back()->setUdpPort(g_initial_udp_port++);

@@ -30,7 +30,7 @@ bool DashServer::openConnection() {
 
 void DashServer::start() {
     execute("rm -f -r -d " + this->path);
-    execute("nodejs ./dash-engine/bin/live-stream udp://" + this->ip + ":" + std::to_string(this->port) + "?fifo_size=50000000 -mpd " + this->mpd + " -foldersegments " + this->path);
+    execute("nodejs /usr/local/etc/engine/bin/live-stream udp://" + this->ip + ":" + std::to_string(this->port) + "?fifo_size=50000000 -mpd " + this->mpd + " -foldersegments " + this->path + " || " + "node /usr/local/etc/engine/bin/live-stream udp://" + this->ip + ":" + std::to_string(this->port) + "?fifo_size=50000000 -mpd " + this->mpd + " -foldersegments " + this->path);
 }
 
 /***************************************************************************************/

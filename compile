@@ -1,1 +1,0 @@
-g++ ./src/*.cpp -I ./include/ -o main -std=c++11 -pthread -lgpac

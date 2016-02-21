@@ -1,5 +1,7 @@
 #include "datagramsocket.h"
 
+/***************************************************************************************/
+
 DatagramSocket::DatagramSocket(int port) {
     this->svr_socket    = socket(AF_INET, SOCK_DGRAM, 0);
     
@@ -10,6 +12,8 @@ DatagramSocket::DatagramSocket(int port) {
     this->svr_port      = port;
     this->from_addrlen  = sizeof(from_addr);
 }
+
+/***************************************************************************************/
 
 DatagramSocket::DatagramSocket(std::string address, int port) {
     this->svr_socket    = socket(AF_INET, SOCK_DGRAM, 0);
@@ -22,9 +26,13 @@ DatagramSocket::DatagramSocket(std::string address, int port) {
     this->from_addrlen  = sizeof(from_addr);
 }
 
+/***************************************************************************************/
+
 DatagramSocket::~DatagramSocket() {
     close(this->svr_socket);
 }
+
+/***************************************************************************************/
 
 int DatagramSocket::Bind() {
     int r;
@@ -48,6 +56,8 @@ int DatagramSocket::Bind() {
     return r;
 }
 
+/***************************************************************************************/
+
 int DatagramSocket::Receive(t_byte* buffer, t_size size) {
     int r;
     
@@ -58,6 +68,8 @@ int DatagramSocket::Receive(t_byte* buffer, t_size size) {
         
     return r;
 }
+
+/***************************************************************************************/
 
 int DatagramSocket::SendTo(t_byte* buffer, t_size size, std::string address, int port) {
     struct sockaddr_in toaddr;
@@ -77,6 +89,8 @@ int DatagramSocket::SendTo(t_byte* buffer, t_size size, std::string address, int
     return r;
 }
 
+/***************************************************************************************/
+
 int DatagramSocket::Send(t_byte* buffer, t_size size) {
     int r;
     
@@ -87,6 +101,8 @@ int DatagramSocket::Send(t_byte* buffer, t_size size) {
         
     return r;
 }
+
+/***************************************************************************************/
 
 int DatagramSocket::Reply(t_byte* buffer, t_size size) {
     int r;
@@ -99,6 +115,8 @@ int DatagramSocket::Reply(t_byte* buffer, t_size size) {
     return r;
 }
 
+/***************************************************************************************/
+
 int DatagramSocket::Close() {
     int r;
     
@@ -110,13 +128,19 @@ int DatagramSocket::Close() {
     return r;
 }
 
+/***************************************************************************************/
+
 int DatagramSocket::getPort() {
     return this->svr_port;
 }
 
+/***************************************************************************************/
+
 std::string DatagramSocket::getHostAddress() {
     return this->svr_address;
 }
+
+/***************************************************************************************/
 
 void DatagramSocket::registerclient(std::string address, int port) {
     this->to_addrlen = sizeof(this->to_addr);
@@ -127,6 +151,8 @@ void DatagramSocket::registerclient(std::string address, int port) {
     inet_pton(AF_INET, address.c_str(), &this->to_addr.sin_addr);
     this->to_addr.sin_port = htons(port);
 }
+
+/***************************************************************************************/
 
 int DatagramSocket::getSocket() {
     return this->svr_socket;

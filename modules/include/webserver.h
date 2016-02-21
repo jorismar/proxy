@@ -1,8 +1,8 @@
-/******************************************************************************************
+/**
  * \file 	webserver.h
  * 
  * \author 	Jorismar Barbosa Meira <jorismar.barbosa@lavid.ufpb.br>
- ******************************************************************************************/
+ */
 
 #ifndef WEBSERVER_H
 #define WEBSERVER_H
@@ -21,11 +21,11 @@
 #include "http.h"
 #include "dashserver.h"
 
-/******************************************************************************************
+/**
  * \brief This class manages and controls the server for web (http) clients.
  * 
  * \headerfile webserver.h
- ******************************************************************************************/
+ */
 
 class Webserver {
     private:
@@ -45,7 +45,7 @@ class Webserver {
         
     public:
         
-        /******************************************************************************************
+        /**
          * \brief   Constructor
          * 
          * \param   svr_port        TCP port for HTTP server
@@ -54,78 +54,78 @@ class Webserver {
          * \param   audio_buffer    Dash audio buffer for on-the-fly mode.
          * \param   path            Website files path
          * \param   dash_path       Dash files path
-         ******************************************************************************************/
+         */
         Webserver(int svr_port, bool is_on_the_fly, Buffer **video_buffer, Buffer **audio_buffer, std::string path, std::string dash_path);
 
-        /******************************************************************************************
+        /**
          * \brief   Destructor
-         ******************************************************************************************/
+         */
         virtual ~Webserver();
 
-        /******************************************************************************************
+        /**
          * \brief   This method start and bind TCP sockets for HTTP server
          *
          * \return  Return true if TCP socket open and bind sucessfuly and false if not.
-         ******************************************************************************************/
+         */
         bool openConnection();
 
-        /******************************************************************************************
+        /**
          * \brief   This method start the HTTP server
-         ******************************************************************************************/
+         */
         void start();
 
-        /******************************************************************************************
+        /**
          * \brief   This method stop the HTTP server
-         ******************************************************************************************/
+         */
         void stop();
 
-        /******************************************************************************************
+        /**
          * \brief   This method process file request and return then.
          *
          * \param   filename    Name of requested file.
          *
          * \return  Return a virtual objetc of the requested file, or NULL if a error occurs.
-         ******************************************************************************************/
+         */
         VirtualFile* getFile(std::string filename);
 
-        /******************************************************************************************
+        /**
          * \brief   This method read a file on the computer disc.
          *
          * \param   path        Requested file location.
          * \param   filetype    Type of requested file.
          *
          * \return  Return a virtual objetc of the requested file, or NULL if a error occurs.
-         ******************************************************************************************/
+         */
         VirtualFile* readFile(std::string path, std::string filetype);
 
-        /******************************************************************************************
+        /**
          * \brief   This method read a file on the buffer.
          *
          * \param   filename    Name of requested file.
          *
          * \return  Return a virtual objetc of the requested file, or NULL if a error occurs.
-         ******************************************************************************************/
+         */
         VirtualFile* readExternalBuffer(std::string filename);
 
-        /******************************************************************************************
+        /**
          * \brief   This method start a thread to meet a specific client.
          *
          * \param   cl  Socket of a connected client.
-         ******************************************************************************************/
+         */
         void startClient(t_socket cl);
 
-        /******************************************************************************************
+        /**
          * \brief   Set the TCP port
          *
          * \param   port    TCP port for the HTTP connections
-         ******************************************************************************************/
+         */
         void setPort(int port);
 
-        /******************************************************************************************
+        /**
          * \brief   Get the TCP port
          *
          * \return   Return the TCP port for the HTTP connections
-         ******************************************************************************************/
+         */
         int getPort();
 };
 
