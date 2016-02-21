@@ -64,7 +64,7 @@ void Webserver::startClient(t_socket cl) {
 
         header->processRequest(buffer);
         
-        file = this->getFile(header->get_reqsted_file());
+        file = this->getFile(header->getReqstedFile());
         
         if(file != NULL) {
             header->createResponseHeader(file->size(), file->filetype(), Http::Status::OK);
@@ -93,7 +93,7 @@ VirtualFile * Webserver::getFile(std::string filename) {
     std::string rqstfile;
 	
 	int type;
-	std::string filetype = Http::filename_to_content_type(filename, &type);
+	std::string filetype = Http::filename2ContentType(filename, &type);
     
     if(type == Http::ContentType::DASH) {
         if(this->on_the_fly) { // Implement to ignore Initializations and MPD

@@ -5,7 +5,7 @@
 Http::Http() {
     this->current_type      = -1;
     this->buffer            = NULL;
-    this->server_name       = "Lavid/Jorismar";
+    this->server_name       = "by Jorismar(LaViD)";
 }
 
 /******************************************************************************************/
@@ -17,70 +17,34 @@ Http::~Http() {
 
 /******************************************************************************************/
 
-int Http::get_start_range_pos() {
+int Http::getStartRangePos() {
     return this->range[0];
 }
 
 /******************************************************************************************/
 
-int Http::get_end_range_pos() {
-    return this->range[1];
-}
-
-/******************************************************************************************
-
-std::string Http::get_connection_state() {
-    return this->connection;
-}
-
-/******************************************************************************************/
-
-std::string Http::get_reqsted_file() {
+std::string Http::getReqstedFile() {
     return this->reqst_file;
 }
 
-/******************************************************************************************
-
-std::string Http::get_referer() {
-    return this->referer;
-}
-
-/******************************************************************************************
-
-std::string Http::get_user_agent() {
-    return this->user_agent;
-}
-
-/******************************************************************************************
-
-std::string Http::get_accepted_types() {
-    return this->accpt;
-}
-
-/******************************************************************************************
-
-std::string Http::get_accepted_encoding() {
-    return this->accpt_encoding;
-}
-
 /******************************************************************************************/
 
-int Http::get_reply_status() {
+int Http::getReplyStatus() {
     return reply_status;
 }
 
 /******************************************************************************************/
 
-int Http::get_content_type() {
+int Http::getContentType() {
     if(this->current_type < 0)
-        this->current_type = Http::content_type_to_int(this->content_type);
+        this->current_type = Http::contentType2int(this->content_type);
     
     return this->current_type;
 }
 
 /******************************************************************************************/
 
-std::string Http::get_str_content_type() {
+std::string Http::getStrContentType() {
     return this->content_type;
 }
 
@@ -110,12 +74,12 @@ std::string Http::getHeader() {
 
 /******************************************************************************************/
 
-std::string Http::getfield(std::string src, std::string mark, char sep) {
+std::string Http::getfield(std::string src, std::string mark, char end) {
     int src_size = src.length(), mark_start_pos = src.find(mark);
     std::string value = "";
     
     if(mark_start_pos != std::string::npos) {
-        for(int pos = mark_start_pos + mark.length(); pos < src_size && src.at(pos) != sep; pos++) {
+        for(int pos = mark_start_pos + mark.length(); pos < src_size && src.at(pos) != end; pos++) {
             value += src.at(pos);
         }
     }
@@ -123,18 +87,6 @@ std::string Http::getfield(std::string src, std::string mark, char sep) {
     return value;    
 }
 
-/******************************************************************************************/
-
-void Http::processResponse(t_byte * header) {
-    std::string msg(header);
-    
-    try {
-        this->reply_status = std::stoi(this->getfield(msg, " ", ' '), NULL);
-    } catch(...) {
-        PRINT("[ERROR] Could not read the reply status code")
-    }
-}
-    
 /******************************************************************************************/
 
 void Http::processRequest(t_byte * header) {
@@ -150,7 +102,7 @@ void Http::processRequest(t_byte * header) {
     }
     
     this->range[0] = -1;
-    this->range[1] = -1;
+//  this->range[1] = -1;
 
     std::string aux;
     std::string::size_type sz;
@@ -163,7 +115,7 @@ void Http::processRequest(t_byte * header) {
         } catch(...) {
             this->range[0] = -1;
         }
-
+/*
         aux = this->getfield(msg, "Range: bytes=" + aux + '-', '\n');
 
         try {
@@ -171,9 +123,22 @@ void Http::processRequest(t_byte * header) {
         } catch(...) {
             this->range[1] = -1;
         }
+*/
     }
 }
 
+/******************************************************************************************/
+
+void Http::processResponse(t_byte * header) {
+    std::string msg(header);
+    
+    try {
+        this->reply_status = std::stoi(this->getfield(msg, " ", ' '), NULL);
+    } catch(...) {
+        PRINT("[ERROR] Could not read the reply status code")
+    }
+}
+    
 /******************************************************************************************/
 
 std::string Http::createResponseHeader(t_size filelen, std::string content_type, int status) {
@@ -209,9 +174,7 @@ std::string Http::createResponseHeader(t_size filelen, std::string content_type,
                 this->header = "Content-Range: bytes " + std::to_string(this->range[0]) + "-" + std::to_string(filelen - 1) + "/" + filesize + "\r\nAccept-Ranges: bytes\r\nCache-Control: public, max-age=0\r\n";
             } else if(status == Http::Status::NOT_FOUND) {
                 resp = RPLY_NOT_FOUND;
-//              aux = "<center><br><br><font size=\"8\">404</font><br><font size=\"6\">NOT FOUND</font></center>";
                 this->header = "x-content-type-options: nosniff\r\n";
-//              length = std::to_string(aux.length());
                 connection = "close";
             } else if(status == Http::Status::NOT_ACCEPTED || status == Http::Status::BAD_REQUEST) {
                 resp = status == Http::Status::NOT_ACCEPTED ? RPLY_NOT_ACCEPTABLE : RPLY_BAD_REQUEST;

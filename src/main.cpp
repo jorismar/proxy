@@ -54,7 +54,7 @@ void registerOnController() {
 	
 	std::string json = "{\"session_id\" : \"init\", \"ip\" : \"" + g_server_ip + "\", \"port\" : \"" + std::to_string(g_server_port) + "\"}";
 	
-	protocol->createRequestHeader(g_controller_url_path, (t_size) json.length(), Http::int_to_content_type(Http::ContentType::JSON), g_controller_ip + ":" + std::to_string(g_controller_port), Http::Method::POST);
+	protocol->createRequestHeader(g_controller_url_path, (t_size) json.length(), Http::int2ContentType(Http::ContentType::JSON), g_controller_ip + ":" + std::to_string(g_controller_port), Http::Method::POST);
 	
 	protocol->createBinaryPacket((t_byte*) json.c_str(), json.length());
 	
@@ -128,7 +128,7 @@ void startServer() {
 		
 		protocol->processRequest(buffer);
 		
-		if(protocol->get_content_type() == Http::ContentType::JSON) {
+		if(protocol->getContentType() == Http::ContentType::JSON) {
 			std::string id, json(buffer);
 			bool accept = true;
 			
@@ -192,7 +192,7 @@ void startServer() {
             }
 			
 			if(accept) {
-				protocol->createResponseHeader(json.length(), Http::int_to_content_type(Http::ContentType::JSON), Http::Status::OK);
+				protocol->createResponseHeader(json.length(), Http::int2ContentType(Http::ContentType::JSON), Http::Status::OK);
 				protocol->createBinaryPacket((t_byte*) json.c_str(), json.length());
 			} else {
 				protocol->createResponseHeader(0, "", Http::Status::BAD_REQUEST);
