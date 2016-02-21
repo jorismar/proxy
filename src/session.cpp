@@ -4,25 +4,17 @@
 
 Session::Session(std::string id, std::string ip, int udp_port, int http_port, std::string site_path, int dash_profile, std::string dash_path, std::string mpd, bool is_on_the_fly, t_size buffer_size) {
     this->id = id;
-	this->ip = ip;
-    this->path = site_path;
-    this->dash_path = dash_path;
-	this->mpd_name = mpd;
-    this->udp_port = udp_port;
-    this->http_port = http_port;
-    this->on_the_fly = is_on_the_fly;
-    this->dash_profile = dash_profile;
     
-    if(!on_the_fly) {
-        this->video_dash_buffer = NULL;
-        this->audio_dash_buffer = NULL;
-//        this->webserver = new Webserver(http_port, is_on_the_fly, NULL, NULL, path, dash_path);
-    } else {
+    if(is_on_the_fly) {
         this->video_dash_buffer = new Buffer(buffer_size);
         this->audio_dash_buffer = new Buffer(buffer_size - 1);
+    } else {
+        this->video_dash_buffer = NULL;
+        this->audio_dash_buffer = NULL;
     }
 
-    this->webserver = new Webserver(http_port, is_on_the_fly, &this->video_dash_buffer, &this->audio_dash_buffer, path, dash_path + "/dash");
+    this->webserver = new Webserver(http_port, is_on_the_fly, &this->video_dash_buffer, &this->audio_dash_buffer, site_path, dash_path + "/dash");
+    this->dashserver = new DashServer(ip, udp_port, dash_path, mpd, dash_profile, is_on_the_fly, &this->video_dash_buffer, &this->audio_dash_buffer);
 }
 
 /***************************************************************************************/
@@ -35,13 +27,13 @@ Session::~Session() {
         this->audio_dash_buffer->~Buffer();
 
     this->webserver->~Webserver();
+    this->dashserver->~DashServer();
 }
 
 /***************************************************************************************/
 
 bool Session::bindUdpPort() {
-    // Not Implemented Yet
-    return true;
+    return this->dashserver->openConnection();
 }
 
 /***************************************************************************************/
@@ -53,25 +45,20 @@ bool Session::bindHttpPort() {
 /***************************************************************************************/
 
 void Session::start() {
-    std::string clear = "rm -f -r -d " + this->dash_path;
-    std::string run = "nodejs ./dash-engine/bin/live-stream udp://" + this->ip + ":" + std::to_string(this->udp_port) + "?fifo_size=50000000 -mpd " + this->mpd_name + " -foldersegments " + this->dash_path;
-    std::string cmd = clear + " && " + run;
-
     std::thread websvr([=](){this->webserver->start(); return 1;});
-    std::thread dash(execute, cmd);
-    std::thread cleaning(execute, cmd);
+    std::thread dashsvr([=](){this->dashserver->start(); return 1;});
+    
+    PRINT("[INFO] Session id:" << this->id << " running on UDP:" << this->dashserver->getPort() << "/HTTP:" << this->webserver->getPort());
 
-    PRINT("[INFO] Session id:" << this->id << " running on UDP:" << this->udp_port << "/HTTP:" << this->http_port);
-
-    dash.detach();
+    dashsvr.detach();
     websvr.join();
-    cleaning.join();
 }
 
 /***************************************************************************************/
 
 void Session::stop() {
     this->webserver->stop();
+    this->dashserver->stop();    
 }
 
 /***************************************************************************************/
@@ -83,25 +70,23 @@ std::string Session::getID() {
 /***************************************************************************************/
 
 int Session::getUdpPort() {
-    return this->udp_port;
+    return this->dashserver->getPort();
 }
 
 /***************************************************************************************/
 
 int Session::getHttpPort() {
-    return this->http_port;
+    return this->webserver->getPort();
 }
 
 /***************************************************************************************/
 
 void Session::setUdpPort(int port) {
-    this->udp_port = port;
-//  this->dashserver->setPort(port);
+    this->dashserver->setPort(port);
 }
 
 /***************************************************************************************/
 
 void Session::setHttpPort(int port) {
-    this->http_port = port;
     this->webserver->setPort(port);
 }

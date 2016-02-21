@@ -78,55 +78,11 @@ class Http {
         int range[2];
         std::string reqst_file;
         std::string server_name;
-        std::string httpver;
         std::string accpt;
-        std::string accpt_charset;
-        std::string accpt_encoding;
-        std::string accpt_lang;
-        std::string accpt_datetime;
-        std::string authorization;
-        std::string cache_control;
         std::string connection;
-        std::string cookie;
-        std::string content_len;
-        std::string content_md5;
         std::string content_type;
-        std::string date;
-        std::string expect;
-        std::string from;
         std::string host;
-        std::string if_match;
-        std::string if_modifd_since;
-        std::string if_none_match;
-        std::string if_range;
-        std::string if_unmodif_since;
-        std::string max_forwards;
-        std::string origin;
-        std::string pragma;
-        std::string proxy_authztn;
-        std::string referer;
-        std::string transf_encod;
-        std::string user_agent;
-        std::string upgrade;
-        std::string via;
-        std::string warning;
-        
-        // non-standard
-        bool dnt;
-        std::string front_end_https;
-        std::string proxy_connection;
-        std::string x_att_deviceid;
-        std::string x_csrf_token;
-        std::string x_forwarded_for;
-        std::string x_forwarded_host;
-        std::string x_forwarded_proto;
-        std::string x_http_method_override;
-        std::string x_reqstd_with;
-        std::string x_uidh;
-        std::string x_wap_profile;
 
-        std::string getfield(std::string, std::string, char);
-        
         short reqsttype;
         int reply_status;
         int current_type;
@@ -134,6 +90,51 @@ class Http {
         std::string header;
         t_byte * buffer;
         int buffer_size;
+
+        //std::string httpver;
+        //std::string accpt_charset;
+        //std::string accpt_encoding;
+        //std::string accpt_lang;
+        //std::string accpt_datetime;
+        //std::string authorization;
+        //std::string cache_control;
+        //std::string cookie;
+        //std::string content_len;
+        //std::string content_md5;
+        //std::string date;
+        //std::string expect;
+        //std::string from;
+        //std::string if_match;
+        //std::string if_modifd_since;
+        //std::string if_none_match;
+        //std::string if_range;
+        //std::string if_unmodif_since;
+        //std::string max_forwards;
+        //std::string origin;
+        //std::string pragma;
+        //std::string proxy_authztn;
+        //std::string referer;
+        //std::string transf_encod;
+        //std::string user_agent;
+        //std::string upgrade;
+        //std::string via;
+        //std::string warning;
+        
+        /* non-standard */
+        //bool dnt;
+        //std::string front_end_https;
+        //std::string proxy_connection;
+        //std::string x_att_deviceid;
+        //std::string x_csrf_token;
+        //std::string x_forwarded_for;
+        //std::string x_forwarded_host;
+        //std::string x_forwarded_proto;
+        //std::string x_http_method_override;
+        //std::string x_reqstd_with;
+        //std::string x_uidh;
+        //std::string x_wap_profile;
+
+        std::string getfield(std::string, std::string, char);
         
     public:
         enum Method {GET, POST, PUT, PATCH, DELETE, COPY, HEAD, OPTIONS, LINK, UNLINK, PURGE, RESPONSE};

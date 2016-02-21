@@ -12,7 +12,8 @@
 #include "webserver.h"
 #include "buffer.h"
 #include "util.h"
-#include "dash.h"
+#include "dashserver.h"
+
 /******************************************************************************************
  * \brief This class manages and controls the session running.
  * 
@@ -23,18 +24,11 @@ class Session {
     private:
     /******************************************************************************************/
 
-        std::string ip;             // IP of video stream origin
         std::string id;             // Session ID
-        std::string path;           // Website files path
-        std::string dash_path;      // Dash files path
-        std::string mpd_name;       // MPD file name
-        int udp_port;               // UDP port for receive video stream
-        int http_port;              // TCP port for HTTP users access
-        int dash_profile;           // Dash profile used in this session
-        bool on_the_fly;            // On-the-fly mode on/off flag
         Buffer * video_dash_buffer; // Buffer for Dash video fragments used in on-the-fly mode
         Buffer * audio_dash_buffer; // Buffer for Dash audio fragments used in on-the-fly mode
         Webserver * webserver;      // Webserver object
+        DashServer * dashserver;    // DashServer object
 
     /******************************************************************************************/
 

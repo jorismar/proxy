@@ -19,10 +19,10 @@
 #include "util.h"
 #include "virtualfile.h"
 #include "http.h"
-#include "dash.h"
+#include "dashserver.h"
 
 /******************************************************************************************
- * \brief .
+ * \brief This class manages and controls the server for web (http) clients.
  * 
  * \headerfile webserver.h
  ******************************************************************************************/
@@ -120,6 +120,13 @@ class Webserver {
          * \param   port    TCP port for the HTTP connections
          ******************************************************************************************/
         void setPort(int port);
+
+        /******************************************************************************************
+         * \brief   Get the TCP port
+         *
+         * \return   Return the TCP port for the HTTP connections
+         ******************************************************************************************/
+        int getPort();
 };
 
 #endif

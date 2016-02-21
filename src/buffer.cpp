@@ -1,23 +1,30 @@
 #include "buffer.h"
 
-Buffer::Buffer(t_size buffer_size) {
+/******************************************************************************************/
+
+Buffer::Buffer(t_size size) {
     this->r_pos     = 0;
     this->w_pos     = 0;
-    this->buff_size = buffer_size;
-    this->buffer    = (VirtualFile**) malloc(sizeof(VirtualFile*) * buffer_size);
+    this->buff_size = size;
+    this->buffer    = (VirtualFile**) malloc(sizeof(VirtualFile*) * size);
+    
+    memset(this->buffer, 0, size);
 }
+
+/******************************************************************************************/
 
 Buffer::~Buffer() {
     free(this->buffer);
 }
 
-int Buffer::set(t_pos index, VirtualFile * file) {
-    if(!(index < this->buff_size)) return 1;
-    
-    this->buffer[index] = file;
-    
-    return 0;
+/******************************************************************************************/
+
+void Buffer::set(t_pos index, VirtualFile * file) {
+    if(index < this->buff_size) 
+        this->buffer[index] = file;
 }
+
+/******************************************************************************************/
 
 VirtualFile * Buffer::get(t_pos index) {
     VirtualFile * file = NULL;
@@ -28,31 +35,57 @@ VirtualFile * Buffer::get(t_pos index) {
     return file;
 }
 
+/******************************************************************************************/
+
 VirtualFile * Buffer::next() {
-    VirtualFile * file = NULL;
+    VirtualFile * file = this->buffer[this->r_pos];
     
-    if(this->buffer[this->r_pos] != NULL) {
-        file = this->buffer[this->r_pos];
-        this->r_pos = ++this->r_pos % this->buff_size;
-    }
-    
+    this->r_pos = ++this->r_pos % this->buff_size;
+
     return file;
 }
 
-int Buffer::add(VirtualFile * file) {
-    if(this->set(this->w_pos, file) == 1)
-        return 1;
+/******************************************************************************************/
+
+void Buffer::add(VirtualFile * file) {
+    this->buffer[this->w_pos] = file;
     
     this->w_pos = ++this->w_pos % this->buff_size;
-    
-    return 0;
 }
+
+/******************************************************************************************/
 
 void Buffer::remove(t_pos index) {
-    if(index < Buffer::buff_size)
+    if(index < Buffer::buff_size) {
         this->buffer[index]->~VirtualFile();
+        this->buffer[index] = NULL;
+    }
 }
 
-int Buffer::size() {
+/******************************************************************************************/
+
+t_size Buffer::size() {
     return this->buff_size;
+}
+
+/******************************************************************************************/
+
+int Buffer::setNextIndicator(t_pos pos) {
+    if(pos < this->buff_size) {
+        this->r_pos = pos;
+        return this->r_pos;
+    }
+    
+    return -1;
+}
+
+/******************************************************************************************/
+
+int Buffer::setAddIndicator(t_pos pos) {
+    if(pos < this->buff_size) {
+        this->w_pos = pos;
+        return this->w_pos;
+    }
+    
+    return -1;
 }

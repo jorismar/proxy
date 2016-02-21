@@ -6,7 +6,7 @@
 
 #include "http.h"
 #include "session.h"
-#include "dash.h"
+#include "dashserver.h"
 #include "util.h"
 #include <cstdio>
 #include <thread>
@@ -14,20 +14,20 @@
 
 /******************************************************************************************/
 
-Socket*     g_server;                               // Server socket for communication with the controller server
-int 		g_server_port 		= 8080;             // Server port for communication with the controller server
-int 		g_initial_tcp_port 	= 8090;             // Initial TCP port for sessions of http clients
-int 		g_initial_udp_port 	= 1234;             // Initial UDP port to receive the arthron video stream for sessions
-int 		g_dash_profile 		= 1; 				// Dash profile. 0 = live, 1 = on demand (Not Implemented Yet)
-int 		g_controller_port 	= 8085;             // Port used by the control server
-int			g_on_the_fly_buffer_size = 0;			// Buffer size used in on-the-fly mode
-bool        g_dash_on_the_fly   = false;            // MPEG-TS Demux, Dash Processer and HTTP Sender run in on-the-fly mode (Not Implemented Yet)   
-std::string g_server_ip 		= "127.0.0.1";      // Server IP
-std::string g_site_path 		= "./www";          // Path of website files
-std::string g_dash_path 		= "./dash";         // Path where the fragments, initiators and mpd are.
-std::string g_mpd_name			= "dash.mpd";       // MPD file name
-std::string g_controller_ip 	= "127.0.0.1";      // Controller server IP
-std::string g_controller_url_path = "ArthronRest/api/dash_sessions";    // HTTP URL Path of controller server identify the register request
+Socket*     g_server;                           // Server socket for communication with the controller server
+int 		g_server_port 		= 8080;         // Server port for communication with the controller server
+int 		g_initial_tcp_port 	= 8090;         // Initial TCP port for sessions of http clients
+int 		g_initial_udp_port 	= 1234;         // Initial UDP port to receive the arthron video stream for sessions
+int 		g_dash_profile 		= DashServer::Profile::ON_DEMAND;	// Dash profile. 0 = live, 1 = on demand (Not Implemented Yet)
+int 		g_controller_port 	= 8085;         // Port used by the control server
+int			g_on_the_fly_buffer_size = 0;		// Buffer size used in on-the-fly mode
+bool        g_dash_on_the_fly   = false;        // MPEG-TS Demux, Dash Processer and HTTP Sender run in on-the-fly mode (Not Implemented Yet)   
+std::string g_server_ip 		= "127.0.0.1";  // Server IP
+std::string g_site_path 		= "./www";      // Path of website files
+std::string g_dash_path 		= "./dash";     // Path where the fragments, initiators and mpd are.
+std::string g_mpd_name			= "dash.mpd";   // MPD file name
+std::string g_controller_ip 	= "127.0.0.1";  // Controller server IP
+std::string g_controller_url_path = "ArthronRest/api/dash_sessions";	// HTTP URL Path of controller server identify the register request
 
 /******************************************************************************************
  * \brief 	This function connect and register the proxy on the
@@ -258,10 +258,10 @@ int main(int argc, char *argv[]) {
 		} else if(!arg.compare("-site-path")) {
 			g_site_path = argv[++i];
 		} else if(!arg.compare("-live")) {
-				g_dash_profile = Dash::Profile::LIVE;
+				g_dash_profile = DashServer::Profile::LIVE;
 				g_dash_path = "";
 		}else if(!arg.compare("-on-demand")) {
-			g_dash_profile = Dash::Profile::ON_DEMAND;
+			g_dash_profile = DashServer::Profile::ON_DEMAND;
 		} else if(!arg.compare("-dash-path")) {
 			g_dash_path = argv[++i];
 		} else if(!arg.compare("-mpd")) {
@@ -303,7 +303,7 @@ int main(int argc, char *argv[]) {
                     "\n\r  Initial HTTP Session Port: " << g_initial_tcp_port   << \
                     "\n\r  Initial UDP Session Port: "  << g_initial_udp_port   << \
                     "\n\r  Site Directory: \""          << g_site_path          << "\"" << \
-                    "\n\r  Dash Profile: "              << (g_dash_profile == Dash::Profile::LIVE ? "live" : g_dash_profile == Dash::Profile::ON_DEMAND ? "on-demand" : "Invalid") << \
+                    "\n\r  Dash Profile: "              << (g_dash_profile == DashServer::Profile::LIVE ? "live" : g_dash_profile == DashServer::Profile::ON_DEMAND ? "on-demand" : "Invalid") << \
                     "\n\r  MPD Name: "                  << g_mpd_name << \
                     "\n\r  Dash Directory: \""          << g_dash_path          << "\"" << \
                     "\n\r  Controller Server IP: \""    << g_controller_ip      << "\""\
@@ -324,7 +324,7 @@ int main(int argc, char *argv[]) {
             "\n\r  Initial HTTP Session Port: " << g_initial_tcp_port   << \
             "\n\r  Initial UDP Session Port: "  << g_initial_udp_port   << \
             "\n\r  Site Directory: \""          << g_site_path          << "\"" << \
-            "\n\r  Dash Profile: "              << (g_dash_profile == Dash::Profile::LIVE ? "live" : g_dash_profile == Dash::Profile::ON_DEMAND ? "on-demand" : "Invalid") << \
+            "\n\r  Dash Profile: "              << (g_dash_profile == DashServer::Profile::LIVE ? "live" : g_dash_profile == DashServer::Profile::ON_DEMAND ? "on-demand" : "Invalid") << \
             "\n\r  MPD Name: "                  << g_mpd_name 			<< \
             "\n\r  Dash Directory: \""          << g_dash_path          << "\"" << \
             "\n\r  Controller Server IP: \""    << g_controller_ip      << "\""\

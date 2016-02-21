@@ -153,6 +153,10 @@ void Webserver::setPort(int svr_port) {
     this->port = svr_port;
 }
 
+int Webserver::getPort() {
+    return this->port;
+}
+
 //MP4Box -dash 4000 -rap -segment-name -profile live -out video.mpd video.mp4#video video.mp4#audio
 //MP4Box -dash 4000 -rap -profile live -out video.mpd video.mp4#video video.mp4#audio
 //EXIT_IF(pfile == NULL, "Error: File not found.");
