@@ -11,9 +11,6 @@ function printUsage() {
   console.log('  input_file:     the input file to stream, must be a MPEG-2 transport stream');
   console.log('  -mpd name mpd ');
   console.log('  -foldersegments where to go get the segments');
-  console.log(' -a to filter audio');
-  console.log(' -v to filter video');
-  console.log(' -av to audio and video');
 }
 
 var argv = minimist(process.argv.slice(2), { boolean: ['default'] });
@@ -31,16 +28,7 @@ if (argv._.length !== 1 || argv.h === true) {
       mpd_name = argv2[++i];
     }else if(argv2[i] === "-foldersegments"){
       path_segments = argv2[++i];
-    }else if(argv2[i] === "-a"){
-      audio = true;
-      list.push(path_segments);
-    }else if(argv2[i] === "-v"){
-      video = true;
-      list.push(video);
-    }else if(argv2[i] === "-av"){
-
-    }
   }
-
+  
   liveStreamController.launch(inputFile, configFile, mpd_name, path_segments);
 }
