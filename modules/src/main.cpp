@@ -76,7 +76,7 @@ void registerOnController() {
 	free(buffer);
 	socket->Close();
 
-	EXIT_IF(protocol->get_reply_status() != Http::Status::CREATED, "[ERROR] The controller server responded with status code " << protocol->get_reply_status());
+	EXIT_IF(protocol->getReplyStatus() != Http::Status::CREATED, "[ERROR] The controller server responded with status code " << protocol->getReplyStatus());
 }
 
 /******************************************************************************************
