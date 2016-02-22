@@ -1,6 +1,5 @@
 var path = require('path');
 var fs   = require('fs');
-//var live = require('./teste');
 var loadedConfig = undefined;
 var mpd_name;
 var path_segments;
