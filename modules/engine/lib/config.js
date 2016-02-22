@@ -7,8 +7,6 @@ var path_segments;
 
 var defaultConfig = {
   inputFile: undefined,
-  // segmentDir: path.sep + path.join(live.path_segments, 'dashts'),
-  // outputDir: path.sep + path.join(live.path_segments, 'dash'),
   segmentDir: path.sep + path.join('/Users/Josue/Downloads/proxy-master/site', 'dashts'),
   outputDir: path.sep + path.join('/Users/Josue/Downloads/proxy-master/site', 'dash'),
   mp4box: 'MP4Box',
@@ -20,25 +18,22 @@ var defaultEncoding = {
   representations: {
   //SE NÃO HOUVER AUDIO, COMENTAR O CODIGO DE AUDIO ABAIXO 
   
-  	/*audio: [
+  	audio: [
       '-map', '0:1', '-vn', '-acodec', 'aac', '-strict', '-2', //'-ar', '44100', '-ac', '2','-ab','128000', 
       '-f', 'segment', '-segment_time', '1', '-segment_format', 'mpegts'
-    ],*/
+    ],
   //ATE AQUI
 
   //ALTERAR RESOLUÇÃO EM -s PARA RESOLUÇÃO DO VIDEO E -keyint_min 2*FPS / -g FPS / -r FPS
     video: [
       '-map', '0:0', '-vcodec', 'libx264', '-vprofile', 'high', '-preset', 'ultrafast',
-      /*'-s', '3996x2160', '-vb', '30000k','-minrate','100000k', '-bufsize', '250000k', '-maxrate', '40000k',*/
       '-level', '5.1', '-keyint_min', '48', '-g', '24','-r','24', '-sc_threshold', '0', '-an',
-      //'-bsf', 'h264_mp4toannexb', '-flags', '-global_header', '-tune','zerolatency',
-      '-f', 'segment', '-segment_time', '1', '-segment_format', 'mpegts'//, '-probesize', '100000', '-analyzeduration', '0'
+      '-f', 'segment', '-segment_time', '1', '-segment_format', 'mpegts'
     ]
   }
 }
 
 var defaultPackaging = {
-  //ALTERAR -base-url PARA O IP DO SERVER DASH
   mp4box_opts: [
     '-dash-ctx', path.join(defaultConfig.outputDir, 'dash-live.txt'), '-dash', '1000', '-rap', '-ast-offset', '-1800', 
     '-no-frags-default', '-bs-switching', 'no', '-url-template', '-time-shift', '1800', '-mpd-refresh', '1','-profile','dashavc264:live',
@@ -94,7 +89,7 @@ function load(inputFile, configFile, mpd, path_seg) {
 
     if(defaultPackaging.mp4box_opts[i] === "-out"){
       aux = defaultConfig.outputDir;
-      defaultPackaging.mp4box_opts[++i] = aux+"/"+mpd;
+      defaultPackaging.mp4box_opts[++i] = aux+"/"+mpd.split(".mpd");
     }
   }
 }
