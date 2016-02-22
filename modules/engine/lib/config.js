@@ -97,7 +97,6 @@ function load(inputFile, configFile, mpd, path_seg) {
       defaultPackaging.mp4box_opts[++i] = aux+"/"+mpd;
     }
   }
-  console.log(defaultPackaging.mp4box_opts);
 }
 
 var Config = {};
