@@ -3,7 +3,6 @@ var config     = require('./config'),
     watcher    = require('./watcher'),
     transcoder = require('./transcoder'),
     reader     = require('./reader');
-    //live       = require('./teste');
 
 function launch(inputFile, configFile, mpd, path) {
   config.load(inputFile, configFile, mpd, path);
