@@ -13,8 +13,8 @@ function printUsage() {
   console.log('  -foldersegments where to go get the segments');
 }
 
-var argv = minimist(process.argv.slice(2), { boolean: ['default'] });
 var argv2 = process.argv.slice(2);
+var argv = minimist(argv2, { boolean: ['default'] });
 
 if (argv._.length !== 1 || argv.h === true) {
   printUsage();
