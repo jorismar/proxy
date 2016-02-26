@@ -1,13 +1,13 @@
 var path = require('path');
 var fs   = require('fs');
 var loadedConfig = undefined;
-var ffmpeg_out_dir = 'dashts';
-var mp4box_out_dir = 'dash';
+var mpd_name;
+var path_segments;
 
 var defaultConfig = {
   inputFile: undefined,
-  segmentDir: path.join('/tmp/dashserver', ffmpeg_out_dir),
-  outputDir: path.join('/tmp/dashserver', mp4box_out_dir),
+  segmentDir: path.sep + path.join('/Users/Josue/Downloads/proxy-master/site', 'dashts'),
+  outputDir: path.sep + path.join('/Users/Josue/Downloads/proxy-master/site', 'dash'),
   mp4box: 'MP4Box',
   ffmpeg: 'ffmpeg'
 }
@@ -15,11 +15,14 @@ var defaultConfig = {
 var defaultEncoding = {
   commandPrefix: [ '-re', '-i', '-', '-threads', '30','-y' ],
   representations: {
+  //SE NÃO HOUVER AUDIO, COMENTAR O CODIGO DE AUDIO ABAIXO 
   	audio: [
-      '-map', '0:0', '-vn', '-acodec', 'aac', '-strict', '-2', '-ar', '48000', '-ac', '2', 
+      '-map', '0:0', '-vn', '-acodec', 'aac', '-strict', '-2', //'-ar', '44100', '-ac', '2','-ab','128000', 
       '-f', 'segment', '-segment_time', '1', '-segment_format', 'mpegts'
     ],
+  //ATE AQUI
 
+  //ALTERAR RESOLUÇÃO EM -s PARA RESOLUÇÃO DO VIDEO E -keyint_min 2*FPS / -g FPS / -r FPS
     video: [
       '-map', '0:1', '-vcodec', 'libx264', '-vprofile', 'high', '-preset', 'ultrafast',
       '-level', '5.1', '-keyint_min', '48', '-g', '24','-r','24', '-sc_threshold', '0', '-an',
@@ -30,10 +33,10 @@ var defaultEncoding = {
 
 var defaultPackaging = {
   mp4box_opts: [
-    '-dash-ctx', path.join(defaultConfig.outputDir, 'dash-live.txt'), '-out', path.join(defaultConfig.outputDir, 'live'),
-	'-dash', '1000', '-rap', '-ast-offset', '12', '-no-frags-default', '-bs-switching', 'no', '-min-buffer', '1000',
-	'-url-template', '-time-shift', '10', '-mpd-refresh', '1', '-mpd-title', 'MPEG-DASH live stream', '-single-segment',
-	'-mpd-info-url', 'http://ebu.io/', '-segment-name','$RepresentationID$', '-dynamic', '-subsegs-per-sidx', '-1'
+    '-dash-ctx', path.join(defaultConfig.outputDir, 'dash-live.txt'), '-dash', '1000', '-rap', '-ast-offset', '-1800', 
+    '-no-frags-default', '-bs-switching', 'no', '-url-template', '-time-shift', '1800', '-mpd-refresh', '1','-profile','dashavc264:live',
+    '-mpd-title', 'MPEG-DASH live stream', '-mpd-info-url', 'http://ebu.io/', '-segment-name','$RepresentationID$', '-out', path.join(defaultConfig.outputDir, 'live'),
+    '-dynamic', '-subsegs-per-sidx', '-1'
   ]
 }
 
@@ -63,14 +66,33 @@ function merge(orig, custom) {
 }
 
 function load(inputFile, configFile, mpd, path_seg) {
+  mpd_name = mpd;
+  var aux;
+  if (configFile) {
+    // Attempt to load config from file, exit if fails
+    try {
+      var data = fs.readFileSync(configFile, 'utf8');
+      loadedConfig = JSON.parse(data);      
+    } catch(e) {
+      console.log("Error: invalid data found while trying to read config file. Please make sure it exists and contains valid JSON data.");
+      process.exit(1);
+    }
+    merge(defaultConfig, loadedConfig);
+  }
   defaultConfig.inputFile = inputFile;
-
   if((mpd || path_seg) != undefined){
-    defaultConfig.segmentDir = path.join(path_seg, ffmpeg_out_dir);
-    defaultConfig.outputDir = path.join(path_seg, mp4box_out_dir);
+    
+    defaultConfig.segmentDir = path.join(path_seg, 'dashts');
+    defaultConfig.outputDir = path.join(path_seg, 'dash');
 
-	defaultPackaging.mp4box_opts[1] = path.join(defaultConfig.outputDir, 'dashlive.txt');
-	defaultPackaging.mp4box_opts[3] = path.join(defaultConfig.outputDir, mpd);
+    for(i = 0; i<defaultPackaging.mp4box_opts.length; i++){
+  
+      if(defaultPackaging.mp4box_opts[i] === '-out'){
+        aux = defaultConfig.outputDir;
+        //defaultPackaging.mp4box_opts[++i] = aux+"/"+mpd.split(".mpd");
+        defaultPackaging.mp4box_opts[++i] = mpd;
+      }
+    }
   }
 }
 
