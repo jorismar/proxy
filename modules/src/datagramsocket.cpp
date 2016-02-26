@@ -11,6 +11,18 @@ DatagramSocket::DatagramSocket(int port) {
     this->svr_address   = "";
     this->svr_port      = port;
     this->from_addrlen  = sizeof(from_addr);
+
+    //bzero((char*) &this->svr_addr, sizeof(this->svr_addr));
+    memset((char*) &this->svr_addr, 0, sizeof(this->svr_addr));
+
+    this->svr_addr.sin_family = AF_INET;//AF_UNSPEC
+    this->svr_addr.sin_port = htons(this->svr_port);
+    
+    if(this->svr_address.length() == 0)
+        this->svr_addr.sin_addr.s_addr = INADDR_ANY; // localhost server
+    else 
+        inet_pton(AF_INET, this->svr_address.c_str(), &this->svr_addr.sin_addr); // remote server
+ 
 }
 
 /***************************************************************************************/
@@ -24,6 +36,12 @@ DatagramSocket::DatagramSocket(std::string address, int port) {
     this->svr_address   = address;
     this->svr_port      = port;
     this->from_addrlen  = sizeof(from_addr);
+
+    memset((char*) &toaddr, 0, toaddrlen);
+
+    toaddr.sin_family = AF_INET;//AF_UNSPEC;
+    inet_pton(AF_INET, address.c_str(), &toaddr.sin_addr);
+    toaddr.sin_port = htons(port);
 }
 
 /***************************************************************************************/
@@ -37,17 +55,6 @@ DatagramSocket::~DatagramSocket() {
 int DatagramSocket::Bind() {
     int r;
     
-    //bzero((char*) &this->svr_addr, sizeof(this->svr_addr));
-    memset((char*) &this->svr_addr, 0, sizeof(this->svr_addr));
-
-    this->svr_addr.sin_family = AF_INET;//AF_UNSPEC
-    this->svr_addr.sin_port = htons(this->svr_port);
-    
-    if(this->svr_address.length() == 0)
-        this->svr_addr.sin_addr.s_addr = INADDR_ANY; // localhost server
-    else 
-        inet_pton(AF_INET, this->svr_address.c_str(), &this->svr_addr.sin_addr); // remote server
- 
     r = bind(this->svr_socket, (struct sockaddr*) &this->svr_addr, sizeof(this->svr_addr));
     
     if(r < 0)
@@ -157,3 +164,5 @@ void DatagramSocket::registerclient(std::string address, int port) {
 int DatagramSocket::getSocket() {
     return this->svr_socket;
 }
+
+// implementar set timeout

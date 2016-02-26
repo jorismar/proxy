@@ -7,7 +7,7 @@ VirtualFile::VirtualFile() {
     this->type = "";
     this->modifd = "";
     this->bin  = NULL;
-    this->len  = 0;
+    this->size = 0;
 }
 
 /**************************************************************************************/
@@ -17,7 +17,7 @@ VirtualFile::VirtualFile(std::string filename, std::string type, std::string mod
     this->type = type;
     this->modifd = modified;
     this->bin  = NULL;
-    this->len  = 0;
+    this->size = 0;
 }
 
 /**************************************************************************************/
@@ -61,7 +61,7 @@ void VirtualFile::setBinary(t_byte * bin, t_size size) {
     if(bin != NULL)
         free(this->bin);
     
-    this->len = size;
+    this->size = size;
     this->bin = (t_byte*) malloc(sizeof(t_byte) * size);
         
     for(int i = 0; i < size; i++)
@@ -95,5 +95,45 @@ t_byte * VirtualFile::binary() {
 /**************************************************************************************/
 
 t_size VirtualFile::size() {
-    return this->len;
+    return this->size;
 }
+
+/**************************************************************************************/
+
+t_size Webserver::readFile(std::string path, std::string filetype) {
+    FILE * pfile = fopen(path.c_str(), "rb");
+	
+    if(pfile == NULL) return -1;
+
+	if(this->bin != NULL)
+        this->clear();
+
+    fseek(pfile, 0, SEEK_END);
+    
+    this->size = ftell(pfile);
+    
+    rewind(pfile);
+    
+    this->bin = (char*) malloc (sizeof(char) * this->size);
+
+    this->size = fread(this->bin, 1, this->size, pfile);
+    
+    fclose(pfile);
+    
+    // NAME, TYPE AND DATE MODIFICATION SET NOT IMPLEMENTED YET.
+
+    return this->size;
+}
+
+/**************************************************************************************/
+
+void clear() {
+    this->name = "";
+    this->type = "";
+    this->modifd = "";
+    this->size = 0;
+
+    if(this->bin != NULL)
+        free(bin);
+}
+

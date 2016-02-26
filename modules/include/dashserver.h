@@ -29,6 +29,14 @@ class DashServer {
         bool isonthefly;            // On-the-fly mode on/off flag
         Buffer ** video_buffer;      // Buffer for Dash video fragments used in on-the-fly mode
         Buffer ** audio_buffer;      // Buffer for Dash audio fragments used in on-the-fly mode
+        
+        // Mirror
+        DatagramSocket * rcv;
+        DatagramSocket * snd;
+        
+        int engine_port;
+        bool alive;
+        
     
     /**************************************************************************************/
     public:

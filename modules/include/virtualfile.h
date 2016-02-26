@@ -26,7 +26,7 @@ class VirtualFile {
         std::string type;       // Type of file (Type or http content-type).
         std::string modifd;     // Modification date.
         t_byte * bin;           // Binary data.
-        t_size len;             // Binary data length.
+        t_size size;            // Binary data length.
 
     /**************************************************************************************/
 
@@ -123,6 +123,22 @@ class VirtualFile {
          * \return  Return the size of file.
          */
         t_size  size();
+        
+        /**
+         * \brief   Read a file from the disk and set the attributes.
+         *
+         * 
+         *
+         */
+        t_size readFile(std::string path, std::string filetype);
+        
+        
+        /**
+         *
+         *
+         *
+         */
+        void clear();
 };
 
 #endif

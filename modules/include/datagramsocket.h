@@ -35,6 +35,17 @@ class DatagramSocket {
 
     /**************************************************************************************/
     public:
+        static short MaxPacketSize = 1316;
+        ///**
+        // * \enum    PacketSize
+        // * 
+        // * \brief   Constants of size of the types of UDP packets.
+        // */
+        //enum PacketSize {
+            //UDP = 1316,     /*!< UDP packet size. */
+            //TS = 188        /*!< MPEG-TS packet size. */
+        //};
+        
         /**
          * \brief   Constructor.
          *
