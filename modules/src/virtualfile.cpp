@@ -7,7 +7,7 @@ VirtualFile::VirtualFile() {
     this->type = "";
     this->modifd = "";
     this->bin  = NULL;
-    this->size = 0;
+    this->length = 0;
 }
 
 /**************************************************************************************/
@@ -17,7 +17,7 @@ VirtualFile::VirtualFile(std::string filename, std::string type, std::string mod
     this->type = type;
     this->modifd = modified;
     this->bin  = NULL;
-    this->size = 0;
+    this->length = 0;
 }
 
 /**************************************************************************************/
@@ -59,9 +59,9 @@ void VirtualFile::setModifiedDate(std::string modified) {
 
 void VirtualFile::setBinary(t_byte * bin, t_size size) {
     if(bin != NULL)
-        free(this->bin);
+        this->clear();
     
-    this->size = size;
+    this->length = size;
     this->bin = (t_byte*) malloc(sizeof(t_byte) * size);
         
     for(int i = 0; i < size; i++)
@@ -95,12 +95,12 @@ t_byte * VirtualFile::binary() {
 /**************************************************************************************/
 
 t_size VirtualFile::size() {
-    return this->size;
+    return this->length;
 }
 
 /**************************************************************************************/
 
-t_size Webserver::readFile(std::string path, std::string filetype) {
+t_size VirtualFile::fromFile(std::string path) {
     FILE * pfile = fopen(path.c_str(), "rb");
 	
     if(pfile == NULL) return -1;
@@ -110,28 +110,40 @@ t_size Webserver::readFile(std::string path, std::string filetype) {
 
     fseek(pfile, 0, SEEK_END);
     
-    this->size = ftell(pfile);
+    this->length = ftell(pfile);
     
     rewind(pfile);
     
-    this->bin = (char*) malloc (sizeof(char) * this->size);
+    this->bin = (char*) malloc (sizeof(char) * this->length);
 
-    this->size = fread(this->bin, 1, this->size, pfile);
+    this->length = fread(this->bin, 1, this->length, pfile);
     
     fclose(pfile);
     
     // NAME, TYPE AND DATE MODIFICATION SET NOT IMPLEMENTED YET.
 
-    return this->size;
+    return this->length;
 }
 
 /**************************************************************************************/
 
-void clear() {
+t_size VirtualFile::toFile(std::string path) {
+	FILE * pfile = fopen(path.c_str(), "wb");
+
+    if(pfile == NULL || this->bin == NULL) return -1;
+
+	int r = fwrite(this->bin, 1, this->length, pfile);
+	
+	return r;
+}
+
+/**************************************************************************************/
+
+void VirtualFile::clear() {
     this->name = "";
     this->type = "";
     this->modifd = "";
-    this->size = 0;
+    this->length = 0;
 
     if(this->bin != NULL)
         free(bin);

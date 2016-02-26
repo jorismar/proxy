@@ -8,12 +8,9 @@
 #define WEBSERVER_H
 
 #include <string>
-#include <thread>
-#include <chrono>
 #include <fcntl.h>
 #include <cstdio>
 #include <cstddef>
-
 #include "buffer.h"
 #include "socket.h"
 #include "util.h"

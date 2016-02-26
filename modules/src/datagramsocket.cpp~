@@ -10,6 +10,7 @@ DatagramSocket::DatagramSocket(int port) {
     
     this->svr_address   = "";
     this->svr_port      = port;
+    this->from_addrlen  = sizeof(from_addr);
 
     //bzero((char*) &this->svr_addr, sizeof(this->svr_addr));
     memset((char*) &this->svr_addr, 0, sizeof(this->svr_addr));
@@ -22,7 +23,6 @@ DatagramSocket::DatagramSocket(int port) {
     else 
         inet_pton(AF_INET, this->svr_address.c_str(), &this->svr_addr.sin_addr); // remote server
  
-    this->from_addrlen  = sizeof(from_addr);
 }
 
 /***************************************************************************************/
@@ -35,14 +35,16 @@ DatagramSocket::DatagramSocket(std::string address, int port) {
     
     this->svr_address   = address;
     this->svr_port      = port;
+    this->from_addrlen  = sizeof(from_addr);
 
-    memset((char*) &this->to_addr, 0, sizeof(this->to_addr));
+    struct sockaddr_in toaddr;
+    int toaddrlen = sizeof(toaddr);
 
-    this->to_addr.sin_family = AF_INET;//AF_UNSPEC;
-    inet_pton(AF_INET, address.c_str(), &this->to_addr.sin_addr);
-    this->to_addr.sin_port = htons(port);
+    memset((char*) &toaddr, 0, toaddrlen);
 
-    this->to_addrlen = sizeof(this->to_addr);
+    toaddr.sin_family = AF_INET;//AF_UNSPEC;
+    inet_pton(AF_INET, address.c_str(), &toaddr.sin_addr);
+    toaddr.sin_port = htons(port);
 }
 
 /***************************************************************************************/

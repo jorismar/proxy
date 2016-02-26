@@ -9,6 +9,8 @@
 
 #include <ctime>
 #include <string>
+#include <thread>
+#include <chrono>
 #include <cstdlib>
 #include <iostream>
 #include <signal.h>
@@ -116,4 +118,12 @@ static void execute(std::string cmd) {
     std::system(cmd.c_str());
 }
 
+/**
+ * \brief	Sleep the current thread.
+ *
+ * \param	time	Time value in milliseconds.
+ */
+static void sleep(int time) {
+	std::this_thread::sleep_for (std::chrono::milliseconds(time));
+}
 #endif

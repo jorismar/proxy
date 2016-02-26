@@ -140,7 +140,7 @@ class VirtualFile {
          * 
          * \return  Return the number of bytes write.
          */
-        t_size toFile(std::string path);
+        t_size toFile(std::string path)
         
         /**
          * \brief   Reset the class attributes and free the buffer.

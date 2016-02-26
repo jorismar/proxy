@@ -8,8 +8,8 @@
 #define DASH_H
 
 #include <string>
-#include "virtualfile.h"
-#include "datagramsocket.h"
+#include "VirtualFile.h"
+#include "DatagramSocket.h"
 #include "buffer.h"
 #include "util.h"
 

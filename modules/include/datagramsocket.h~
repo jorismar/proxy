@@ -35,7 +35,7 @@ class DatagramSocket {
 
     /**************************************************************************************/
     public:
-        static const short MaxPacketSize = 1316;
+        static short MaxPacketSize = 1316;
         ///**
         // * \enum    PacketSize
         // * 

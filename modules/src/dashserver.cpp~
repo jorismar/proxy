@@ -83,7 +83,7 @@ void DashServer::start() {
             
             current += begin + std::to_string(count++) + end;
             
-            file->setBinary((t_byte*) current.c_str(), current.length());
+            file->setBinary(current.c_str(), current.length());
             
             while(file->toFile(filename) < 0);
             

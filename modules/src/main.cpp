@@ -40,7 +40,7 @@ void registerOnController() {
 	Socket * socket = new Socket();
 	
 	while(socket->Connect(g_controller_ip, g_controller_port) < 0) {
-		std::this_thread::sleep_for (std::chrono::milliseconds(1000));
+		sleep(1000);
 	}
 	
 	PRINT("[INFO] Connected to the controller.");
